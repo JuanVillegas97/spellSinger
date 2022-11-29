@@ -1,5 +1,4 @@
 import * as THREE from 'three'
-import * as CANNON from 'cannon-es'
 
 export interface body {shape: THREE.Mesh, skeleton: THREE.Box3}
 export class Model{

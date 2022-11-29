@@ -1,10 +1,9 @@
 import * as THREE from 'three'
-import * as CANNON from 'cannon-es'
 
 import { Model, body } from './Model'
 
-
 export class Mutant extends Model{
+   private raycaster = new THREE.Raycaster();
    private readonly fadeDuration : number = .2
    private search: THREE.Vector3[] = [];
    private minAngle = 75;
@@ -23,6 +22,7 @@ export class Mutant extends Model{
       animationsMap: Map<string, THREE.AnimationAction>,
       currentAction: string,
       body: body,
+
       ) {
       super(model,mixer,animationsMap,currentAction,body)
       // console.log(this.search)
@@ -31,10 +31,7 @@ export class Mutant extends Model{
       this.model.add(this.hpBar);
    }
 
-   public update(delta:number,scene:THREE.Scene,camera:THREE.PerspectiveCamera, playerModel:THREE.Group) : void{
-      for(let i = this.minAngle; i<this.maxAngle; i+=15) {
-         this.search[i] = new THREE.Vector3(Math.cos(i * (Math.PI / 180)),1,Math.sin(i * (Math.PI / 180)))
-      }
+   public update(delta:number,camera:THREE.PerspectiveCamera, playerModel:THREE.Group) : void{
         //animation checks
       this.play='idle'
 
@@ -59,7 +56,6 @@ export class Mutant extends Model{
                //animate recoil to dmg
                //this.play='recoil'
             }
-
       } else {
          this.play='idle'
       } 
@@ -72,7 +68,11 @@ export class Mutant extends Model{
    }
       this.mixer.update(delta)
       this.gettingCloser(playerModel)
-      //   this.raycastCheck(scene,playerModel)
+
+      const shape = this.body.shape
+      const skeleton = this.body.skeleton
+      shape.position.copy(this.model.position)
+      if(shape.geometry.boundingBox){skeleton.copy(shape.geometry.boundingBox).applyMatrix4(shape.matrixWorld)}
    }
 
    public attack():void {
