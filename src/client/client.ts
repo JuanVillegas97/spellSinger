@@ -68,7 +68,7 @@ function animate() : void {
     nebula ? nebula.update() : null
     dragon ? dragon.update(delta, player.getModel().position,player.getModel().rotation) : null
 
-    mutant ?  mutant.update(delta,app.scene,player.getModel()) : null;
+    mutant ?  mutant.update(delta,app.scene,player.getModel(),player.getBody()) : null;
     
     cannonDebugRenderer.update()
 
@@ -119,7 +119,7 @@ function initPlayer() : void {
         gltfAnimations.filter(a=> a.name != 'Armature.001|mixamo.com|Layer0').forEach((a:THREE.AnimationClip)=>{
             animationMap.set(a.name,mixer.clipAction(a))
         })
-        const body = new CANNON.Body({ mass: 50, shape: new CANNON.Cylinder(1, 1, 4, 12)})
+        const body = new CANNON.Body({ mass: 0, shape: new CANNON.Cylinder(1, 1, 4, 12)})
         body.position.y = 3
         model.name = 'Warlock'
         model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
@@ -145,8 +145,8 @@ function initMutant():void {
             animationMap.set(a.name,mixer.clipAction(a))
         })
         const shape =  new CANNON.Cylinder(2, 2, 9, 12)
-        const body = new CANNON.Body({ mass: 100, shape: shape})
-        body.position.y = 4
+        const body = new CANNON.Body({ mass: 0, shape: shape})
+        body.position.y = 5
         body.position.x = 15
         model.name = 'Mutant'
         model.position.y= 0

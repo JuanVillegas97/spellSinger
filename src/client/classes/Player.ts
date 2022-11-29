@@ -68,7 +68,7 @@ export class Player extends Model{
     public update(delta:number, keysPressed:any, mouseButtonsPressed:any) : void{
         this.updateBullets()
         if(this.body.position.z<-10) this.body.position.z=-10;
-        if(this.body.position.z>10) this.body.position.z=10;
+        if(this.body.position.z>12) this.body.position.z=12;
         if(this.body.position.x<-30) this.body.position.x=-30;
         if(this.body.position.x>30) this.body.position.x=30;
 
