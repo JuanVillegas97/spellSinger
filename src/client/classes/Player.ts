@@ -40,10 +40,9 @@ export class Player extends Model{
         mixer: THREE.AnimationMixer,  
         animationsMap: Map<string, THREE.AnimationAction>,
         currentAction: string,
-        body: CANNON.Body,
         particles:any
         ){
-        super(model,mixer,animationsMap,currentAction,body)
+        super(model,mixer,animationsMap,currentAction)
         this.particles=particles
 
     }
@@ -75,10 +74,10 @@ export class Player extends Model{
 
     public update(delta:number, keysPressed:any, mouseButtonsPressed:any) : void{
         this.updateBullets()
-        if(this.body.position.z<-10) this.body.position.z=-10;
-        if(this.body.position.z>10) this.body.position.z=10;
-        if(this.body.position.x<-30) this.body.position.x=-30;
-        if(this.body.position.x>30) this.body.position.x=30;
+        if(this.model.position.z<-10) this.model.position.z=-10;
+        if(this.model.position.z>10 ) this.model.position.z=10;
+        if(this.model.position.x<-30) this.model.position.x=-30;
+        if(this.model.position.x>30 ) this.model.position.x=30;
 
         const directionPressed = ['w','a','s','d'].some(key => keysPressed[key] == true)
         const clickPressed =['left','middle','right'].some(key => mouseButtonsPressed[key] == true)
@@ -176,27 +175,27 @@ export class Player extends Model{
             const velocity = this.currentAction == 'run.001' ? this.runVelocity : this.walkVelocity
             if(keysPressed.d==true){
                 this.lookingAt='right'
-                this.body.position.x += velocity
+                this.model.position.x += velocity
                 this.model.rotation.y = 1.5
             }
             if(keysPressed.a==true){
                 this.lookingAt='left'
-                this.body.position.x -= velocity
+                this.model.position.x -= velocity
                 this.model.rotation.y = -1.5
 
             }
             if(keysPressed.s==true){
                 this.lookingAt='down'
-                this.body.position.z += velocity
+                this.model.position.z += velocity
                 this.model.rotation.y = 0
             }
             if(keysPressed.w==true){
                 this.lookingAt='up'
-                this.body.position.z -= velocity
+                this.model.position.z -= velocity
                 this.model.rotation.y = 3
             }
         }
-        this.model.position.set(this.body.position.x,this.body.position.y-2,this.body.position.z)
+        // this.model.position.set(this.body.position.x,this.body.position.y-2,this.body.position.z)//!CHECK THIS
         this.mixer.removeEventListener('loop',this.boundCastAttack1)
     }
 

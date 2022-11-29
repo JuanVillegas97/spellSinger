@@ -22,10 +22,8 @@ export class Mutant extends Model{
       mixer: THREE.AnimationMixer,  
       animationsMap: Map<string, THREE.AnimationAction>,
       currentAction: string,
-      body: CANNON.Body
       ) {
-         
-      super(model,mixer,animationsMap,currentAction,body)
+      super(model,mixer,animationsMap,currentAction)
       // console.log(this.search)
       this.hpBar.position.y=this.model.position.y+1.8;
       this.hpBar.name = "hpBar";
@@ -79,7 +77,7 @@ export class Mutant extends Model{
          this.currentAction = this.play
    }
       this.mixer.update(delta)
-      this.gettingCloser(playerModel)
+      // this.gettingCloser(playerModel)
       //   this.raycastCheck(scene,playerModel)
    }
 
@@ -88,44 +86,44 @@ export class Mutant extends Model{
    }
 
    private gettingCloser(player:THREE.Group){
-      if (player.position.x > this.body.position.x ){this.body.position.x += .1; this.model.rotation.y=1.5}
-      if (player.position.z > this.body.position.z ){this.body.position.z += .1; }//this.model.rotation.y=3}
-      if (player.position.z < this.body.position.z ){this.body.position.z -= .1; }//this.model.rotation.y=3}
-      if (player.position.x < this.body.position.x ){this.body.position.x -= .1; this.model.rotation.y=-1.5}
-      this.model.position.set(this.body.position.x,this.body.position.y-5,this.body.position.z)
+      if (player.position.x > this.model.position.x ){this.model.position.x += .1; this.model.rotation.y=1.5}
+      if (player.position.z > this.model.position.z ){this.model.position.z += .1; }//this.model.rotation.y=3}
+      if (player.position.z < this.model.position.z ){this.model.position.z -= .1; }//this.model.rotation.y=3}
+      if (player.position.x < this.model.position.x ){this.model.position.x -= .1; this.model.rotation.y=-1.5}
+      // this.model.position.set(this.model.position.x,this.model.position.y-5,this.model.position.z)//!CHECK THIS
    }
 
-   public raycastCheck(scene: THREE.Scene, playerModel:THREE.Group):void {
-      const dampSpeed = .005
-      const far = 15
-      const distance = this.model.position.distanceTo(playerModel.position)
-      const distanceVec = new THREE.Vector3().subVectors(this.model.position,playerModel.position)
-      if( ( distance< far) ) {
+   // public raycastCheck(scene: THREE.Scene, playerModel:THREE.Group):void {
+   //    const dampSpeed = .005
+   //    const far = 15
+   //    const distance = this.model.position.distanceTo(playerModel.position)
+   //    const distanceVec = new THREE.Vector3().subVectors(this.model.position,playerModel.position)
+   //    if( ( distance< far) ) {
 
-         this.search.forEach((direction) => {
-            const angleDeg = playerModel.position.dot(this.model.position)
-            console.log(angleDeg)
-           // console.log(this.model.position)
-            // console.log(intersects?.[0]?.object?.name)
-            if ((this.minAngle<=angleDeg && angleDeg<=this.maxAngle)) {
-               this.model.position.x += direction.x*dampSpeed;
-               this.model.position.z += direction.z*dampSpeed; 
-               this.body.position.x += direction.x*dampSpeed;
-               this.body.position.z += direction.z*dampSpeed;
-               // this.gotHit = true;
-            } else {
-               this.model.position.x -= direction.x*dampSpeed;
-               this.model.position.z -= direction.z*dampSpeed; 
-               this.body.position.x -= direction.x*dampSpeed;
-               this.body.position.z -= direction.z*dampSpeed;
-              // this.gotHit = false
-            }
-         //    if (100<=angleDeg && angleDeg<=105) {
-         //       console.log("rotateY")
-         //       this.model.rotateY(.5)
-         //   }
-      })
-      } 
+   //       this.search.forEach((direction) => {
+   //          const angleDeg = playerModel.position.dot(this.model.position)
+   //          console.log(angleDeg)
+   //         // console.log(this.model.position)
+   //          // console.log(intersects?.[0]?.object?.name)
+   //          if ((this.minAngle<=angleDeg && angleDeg<=this.maxAngle)) {
+   //             this.model.position.x += direction.x*dampSpeed;
+   //             this.model.position.z += direction.z*dampSpeed; 
+   //             this.body.position.x += direction.x*dampSpeed;
+   //             this.body.position.z += direction.z*dampSpeed;
+   //             // this.gotHit = true;
+   //          } else {
+   //             this.model.position.x -= direction.x*dampSpeed;
+   //             this.model.position.z -= direction.z*dampSpeed; 
+   //             this.body.position.x -= direction.x*dampSpeed;
+   //             this.body.position.z -= direction.z*dampSpeed;
+   //            // this.gotHit = false
+   //          }
+   //       //    if (100<=angleDeg && angleDeg<=105) {
+   //       //       console.log("rotateY")
+   //       //       this.model.rotateY(.5)
+   //       //   }
+   //    })
+   //    } 
 
-   }
+   // }
 }
