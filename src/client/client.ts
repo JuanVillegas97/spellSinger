@@ -1,10 +1,6 @@
 import * as THREE from 'three'
 import * as CANNON from 'cannon-es'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import {  GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
-import { MTLLoader} from 'three/examples/jsm/loaders/MTLLoader'
-import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader'
-import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
 import { Player } from './classes/Player'
 import { DragonPatron } from './classes/DragonPatron'
 // import CannonDebugRenderer from './utils/cannonDebugRenderer'
@@ -14,9 +10,8 @@ import { Mutant } from './classes/Mutant'
 import Nebula, { SpriteRenderer } from 'three-nebula'
 // @ts-ignore
 import json from "./particles/blue.json"
-import { Color } from 'three'
-import { Model } from './classes/Model'
-
+// @ts-ignore
+import { Water } from "./utils/Water2.js"
 
 // Scene, camera, renderer, world
 const app = getThreeApp()
