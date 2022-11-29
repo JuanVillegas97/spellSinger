@@ -47,11 +47,14 @@ import { MathUtils, Vector2 } from 'three';
         this.play='idle'
 
         //hpChanges
-        //TODO create collision detection flag
+        //TODO create collision detection flag //function
         this.hpBar.lookAt(camera.position)
+        //lower enemy hp on hit
         if(this.gotHit)
         {
-            let subHealthVec = new THREE.Vector3(0.2,0,0);
+         //only change x value of subHealthvec
+         //x value is  how much damage mutant takes per hit
+            let subHealthVec = new THREE.Vector3(0.05,0,0);
             this.hpBar.scale.sub(subHealthVec);
             this.hpBar.scale.clampScalar(0,1);
             // do something if died
@@ -73,7 +76,7 @@ import { MathUtils, Vector2 } from 'three';
          const current = this.animationsMap.get(this.currentAction)
 
          current?.fadeOut(this.fadeDuration)
-         toPlay?.reset().fadeIn(this.fadeDuration).play()
+         toPlay?.reset().fadeIn(this.fadeDuration).play().setLoop(THREE.LoopOnce,1)
          this.currentAction = this.play
      }
         
@@ -103,13 +106,13 @@ import { MathUtils, Vector2 } from 'three';
                this.model.position.z += direction.z*dampSpeed; 
                this.body.position.x += direction.x*dampSpeed;
                this.body.position.z += direction.z*dampSpeed;
-                this.gotHit = true;
+               // this.gotHit = true;
             } else {
                this.model.position.x -= direction.x*dampSpeed;
                this.model.position.z -= direction.z*dampSpeed; 
                this.body.position.x -= direction.x*dampSpeed;
                this.body.position.z -= direction.z*dampSpeed;
-               this.gotHit = false
+              // this.gotHit = false
             }
          //    if (100<=angleDeg && angleDeg<=105) {
          //       console.log("rotateY")
