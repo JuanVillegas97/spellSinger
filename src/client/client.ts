@@ -6,9 +6,8 @@ import json from "./particles/blue.json"
 import { Water } from "./utils/Water2.js"
 import * as THREE from 'three'
 import * as CANNON from 'cannon-es'
-import CannonDebugRenderer from './utils/cannonDebugRenderer'
+import {textureLoader, loader} from './utils/loaders'
 import getThreeApp from "./classes/App"
-import {  GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import { Player } from './classes/Player'
 import { Mutant } from './classes/Mutant'
 import { body } from './classes/Model'
@@ -17,32 +16,21 @@ import { body } from './classes/Model'
 // Scene, camera, renderer, world
 const app = getThreeApp()
 
-// Cannon debugger
-const cannonDebugRenderer = new CannonDebugRenderer(app.scene, app.world)
+const leavesMaterial : THREE.ShaderMaterial = shaderLeaves()
 
-//Loading textures
-const textureLoader = new THREE.TextureLoader()
-
-//GLTF Loader
-const loader = new GLTFLoader()
-
-let player : Player  
-// let dragon : DragonPatron
-let mutant : Mutant
+let player     : Player  
+let mutant     : Mutant
 let skyboxMesh : THREE.Mesh
-let nebula : any
-const leavesMaterial : THREE.ShaderMaterial = shaderLeaves() //leaves
+let nebula     : any
+// let dragon : DragonPatron
 
 
+// initDragon() 
 
-// initLeaves()
-initPlane() 
+initLevel_1() 
 initPlayer()
 initLight() 
-
 initMutant()
-// initDragon() 
-initSky()
 
 // function checkCollision(){
 //     if(cube2BB.intersectsBox(cube1BB)||cube2BB.containsBox(cube1BB)){
@@ -60,27 +48,15 @@ function animate() : void {
         app.world.removeBody(bodi)
     }
     const delta = clock.getDelta()
-
-    // checkCollision()
-
-	leavesMaterial.uniforms.time.value = clock.getElapsedTime()
-    leavesMaterial.uniformsNeedUpdate = true
-    nebula ? nebula.update() : null
-    // dragon ? dragon.update(delta, player.getModel().position,player.getModel().rotation) : null
-    mutant ?  mutant.update(delta,app.camera,player.getModel()) : null
-    
-    if(player && mutant){
-        mutant.setCollading(player.checkCollision(mutant.getSkeleton(),player.getSkeleton()))
-    }
-
-    skyboxMesh ? skyboxMesh.position.copy( app.camera.position ):null
-
+        // dragon ? dragon.update(delta, player.getModel().position,player.getModel().rotation) : null
+    if(nebula)          nebula.update()  
+    if(mutant)          mutant.update(delta,app.camera,player.getModel())
+    if(skyboxMesh)      skyboxMesh.position.copy( app.camera.position )   
+    if(player && mutant)player.setCollading(player.checkCollision(mutant.getSkeleton(),player.getSkeleton()))
     if(player){
-        
-        player.update(delta,keysPressed,mouseButtonsPressed) 
+        player.update(delta,keysPressed,mouseButtonsPressed,app.camera) 
         app.camera.position.x = player.getModel().position.x
         app.camera.lookAt(player.getModel().position)
-
         for (let index = 0; index < player.ballMeshes.length; index++) {
             
             let body = player.balls[index]
@@ -100,16 +76,16 @@ function animate() : void {
             app.world.addBody(body)
             app.scene.add(mesh)
         }
-
     }
+	leavesMaterial.uniforms.time.value = clock.getElapsedTime()
+    leavesMaterial.uniformsNeedUpdate = true
 
     app.world.step(Math.min(delta, 0.1))
-    // cannonDebugRenderer.update()
     app.renderer.render(app.scene, app.camera)
     requestAnimationFrame(animate)
 }
 animate()
-    
+
 //Things forgotten by the hand of god
 // Player
 function initPlayer() : void {
@@ -124,7 +100,7 @@ function initPlayer() : void {
         gltfAnimations.filter(a=> a.name != 'Armature.001|mixamo.com|Layer0').forEach((a:THREE.AnimationClip)=>{
             animationMap.set(a.name,mixer.clipAction(a))
         })
-        shape.visible=true//? CHECK THIS FOR LATER
+        shape.visible=false
         skeleton.setFromObject(shape)
         model.name = 'Warlock'
         model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
@@ -169,7 +145,10 @@ function initMutant():void {
 }
 
 // Skybox
-function initSky() : void {
+
+// Plane
+function initLevel_1() : void {
+    //!SKYBOX
     const ft = new THREE.TextureLoader().load("/skybox/bluecloud_ft.jpg");
     const bk = new THREE.TextureLoader().load("/skybox/bluecloud_bk.jpg");
     const up = new THREE.TextureLoader().load("/skybox/bluecloud_up.jpg");
@@ -184,12 +163,9 @@ function initSky() : void {
     new THREE.MeshBasicMaterial( { map: dn, side: THREE.BackSide } ),
     new THREE.MeshBasicMaterial( { map: rt, side: THREE.BackSide } ),
     new THREE.MeshBasicMaterial( { map: lf, side: THREE.BackSide } ),]
-
     skyboxMesh = new THREE.Mesh( skyboxGeo, skyboxMaterials );
     app.scene.add(skyboxMesh);
-}
-// Plane
-function initPlane() : void {
+    //!GRASS
     const dummy = new THREE.Object3D();
     const geometry = new THREE.PlaneGeometry( 0.1, 1, 1, 4 );
     geometry.translate( 0, 0.5, 0 ); 
@@ -201,19 +177,17 @@ function initPlane() : void {
         0,
         ( Math.random() - 0.5 ) * 10
     );
-
     dummy.scale.setScalar( 0.5 + Math.random() * 0.5 );
     dummy.rotation.y = Math.random() * Math.PI;
     dummy.updateMatrix();
     instancedMesh.setMatrixAt( i, dummy.matrix );
     }
-
+    //!PLANE
     const soilBaseColor = textureLoader.load("./textures/soil/Rock_Moss_001_basecolor.jpg");
     const soilNormalMap = textureLoader.load("./textures/soil/Rock_Moss_001_normal.jpg");
     const soilHeightMap = textureLoader.load("./textures/soil/Rock_Moss_001_height.png");
     const soilRoughness = textureLoader.load("./textures/soil/Rock_Moss_001_roughness.jpg");
     const soilAmbientOcclusion = textureLoader.load("./textures/soil/Rock_Moss_001_ambientOcclusion.jpg");
-
     const geometrySoil = new THREE.PlaneGeometry(100, 50,200,200)
     const planeSoil = new THREE.Mesh(geometrySoil, new THREE.MeshStandardMaterial({
         map: soilBaseColor,
@@ -225,7 +199,6 @@ function initPlane() : void {
         // opacity: 1,
         // transparent:true
     }));
-
     planeSoil.rotateX(-Math.PI / 2) 
     planeSoil.receiveShadow = true;
     planeSoil.receiveShadow = true
@@ -233,9 +206,9 @@ function initPlane() : void {
     app.scene.add(planeSoil)
     const planeShape = new CANNON.Plane()
     const planeBody = new CANNON.Body({ mass: 0, shape: planeShape})
-
     planeBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2)
     app.world.addBody(planeBody)
+    //!VILLAGE
     // loader.load('/models/village/BlackSmithShop.glb',function (gltf) {
     //     const model = gltf.scene
     //     model.position.set(0,3,-20)
@@ -243,9 +216,6 @@ function initPlane() : void {
     //     model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
     //     app.scene.add(model)
     // })
-
-    
-
     loader.load('/models/village/Gate_Level1_BlueTeam.glb',function (gltf) {
         const model = gltf.scene
         model.position.set(0,7.6,-30)
@@ -417,7 +387,7 @@ window.addEventListener('mousedown',(e)=>{
     if(e.button.valueOf()==0) key='left';
     if(e.button.valueOf()==1) key='middle';
     if(e.button.valueOf()==2) key='right';
-     (mouseButtonsPressed as any)[key] = true   
+    (mouseButtonsPressed as any)[key] = true   
     e.preventDefault();
 })
 window.addEventListener('mouseup',(e)=>{
@@ -425,7 +395,7 @@ window.addEventListener('mouseup',(e)=>{
     if(e.button.valueOf()==0) key='left';
     if(e.button.valueOf()==1) key='middle';
     if(e.button.valueOf()==2) key='right';
-     (mouseButtonsPressed as any)[key] = false   
+    (mouseButtonsPressed as any)[key] = false   
     e.preventDefault();
     
 })
