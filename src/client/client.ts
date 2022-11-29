@@ -11,7 +11,9 @@ import getThreeApp from "./classes/App"
 import { Player } from './classes/Player'
 import { Mutant } from './classes/Mutant'
 import { body } from './classes/Model'
+import CannonDebugRenderer from './utils/cannonDebugRenderer'
 // import { DragonPatron } from './classes/DragonPatron'
+
 
 // Scene, camera, renderer, world
 const app = getThreeApp()
@@ -37,12 +39,13 @@ initMutant()
 //         console.log('INTERSECTS')
 //     }
 // }
-
+const cannonDebugRenderer = new CannonDebugRenderer(app.scene, app.world)
 let removeBody:any;
 let bodi: any
 let meshi: any
 const clock = new THREE.Clock()
 function animate() : void {
+    cannonDebugRenderer.update()
     if(removeBody==1){
         meshi.visible=false
         app.world.removeBody(bodi)
@@ -67,11 +70,22 @@ function animate() : void {
                 meshi=mesh
                 player.ballMeshes.splice(index,1)
                 player.balls.splice(index,1)
-                // setTimeout(() => { //! CHECK THIS
-                //     player.particles.emitters.forEach((a:any) => {
-                //         a.dead=true
-                //     })
-                // }, 1000)  
+
+                if(e.body.id==20){
+                    setTimeout(() => { 
+                    mutant.setCollading(false) 
+                    }, 100)  
+                    if(player.getPlay()=='1H_attack'){
+                        mutant.setDamage(0.010)
+                    }
+                    if(player.getPlay()=='2H_attack'){
+                        mutant.setDamage(0.025)
+                    }
+                    if(player.getPlay()=='AOE'){
+                        mutant.setDamage(0.050)
+                    }
+                    mutant.setCollading(true) 
+                }
             })
             app.world.addBody(body)
             app.scene.add(mesh)
@@ -87,7 +101,7 @@ function animate() : void {
 animate()
 
 //Things forgotten by the hand of god
-// Player
+
 function initPlayer() : void {
     loader.load('/models/warlock.glb',function (gltf) {
         const model = gltf.scene
@@ -114,8 +128,6 @@ function initPlayer() : void {
     })
 }
 
-
-Mutant
 function initMutant():void {
     loader.load('/models/mutant.glb',function (gltf) {
         const model = gltf.scene
@@ -125,36 +137,47 @@ function initMutant():void {
         gltfAnimations.forEach((a:THREE.AnimationClip)=>{
             animationMap.set(a.name,mixer.clipAction(a))
         })
-        const shape = new THREE.Mesh(new THREE.BoxGeometry(2,8,1),new THREE.MeshPhongMaterial({color:0Xff0000}))
+        const shape = new THREE.Mesh(new THREE.BoxGeometry(3,8,1),new THREE.MeshPhongMaterial({color:0Xff0000}))
         const skeleton = new THREE.Box3(new THREE.Vector3(),new THREE.Vector3())
         const body : body = {shape: shape, skeleton: skeleton}
+        
+        const cannon =  new CANNON.Body({ mass: 25, shape: new CANNON.Cylinder(2, 2, 9, 12)})
 
 
         shape.visible=true//? CHECK THIS FOR LATER
         skeleton.setFromObject(shape)
+        cannon.position.y = 5
+        cannon.position.x = 15
+        cannon.id=20
         model.name = 'Mutant'
-        model.position.y= 0
-        model.position.x= 15
         model.rotateY(-1)
         model.scale.set(4,4,4)
         model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
         app.scene.add(shape)
         app.scene.add(model)
-        mutant = new Mutant(model,mixer,animationMap,'idle',body)
+        app.world.addBody(cannon)
+        mutant = new Mutant(model,mixer,animationMap,'idle',body, cannon)
     })
 }
 
-// Skybox
+function initLevel_2() : void {
+    // const ft = new THREE.TextureLoader().load("textures/skysnow/winterskyFRONT.png");
+    // const bk = new THREE.TextureLoader().load("textures/skysnow/winterskyBACK.png");
+    // const up = new THREE.TextureLoader().load("textures/skysnow/winterskyTOP.png");
+    // const dn = new THREE.TextureLoader().load("textures/skysnow/winterskyBOTTOM.png");
+    // const rt = new THREE.TextureLoader().load("textures/skysnow/winterskyRIGHT.png");
+    // const lf = new THREE.TextureLoader().load("textures/skysnow/winterskyLEFT.png")
+}
 
-// Plane
 function initLevel_1() : void {
     //!SKYBOX
-    const ft = new THREE.TextureLoader().load("/skybox/bluecloud_ft.jpg");
-    const bk = new THREE.TextureLoader().load("/skybox/bluecloud_bk.jpg");
-    const up = new THREE.TextureLoader().load("/skybox/bluecloud_up.jpg");
-    const dn = new THREE.TextureLoader().load("/skybox/bluecloud_dn.jpg");
-    const rt = new THREE.TextureLoader().load("/skybox/bluecloud_rt.jpg");
-    const lf = new THREE.TextureLoader().load("/skybox/bluecloud_lf.jpg")
+    const ft = new THREE.TextureLoader().load("textures/skybox/bluecloud_ft.jpg");
+    const bk = new THREE.TextureLoader().load("textures/skybox/bluecloud_bk.jpg");
+    const up = new THREE.TextureLoader().load("textures/skybox/bluecloud_up.jpg");
+    const dn = new THREE.TextureLoader().load("textures/skybox/bluecloud_dn.jpg");
+    const rt = new THREE.TextureLoader().load("textures/skybox/bluecloud_rt.jpg");
+    const lf = new THREE.TextureLoader().load("textures/skybox/bluecloud_lf.jpg")
+
     const skyboxGeo = new THREE.BoxGeometry(2000,2000,2000);
     const skyboxMaterials =[
     new THREE.MeshBasicMaterial( { map: ft, side: THREE.BackSide } ),
@@ -206,6 +229,7 @@ function initLevel_1() : void {
     app.scene.add(planeSoil)
     const planeShape = new CANNON.Plane()
     const planeBody = new CANNON.Body({ mass: 0, shape: planeShape})
+    planeBody.id=5
     planeBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2)
     app.world.addBody(planeBody)
     //!VILLAGE
@@ -271,7 +295,6 @@ function initLight() : void {
 }
 
 //Leaves
-
 function shaderLeaves(){
     const simpleNoise = `
     float N (vec2 st) { // https://thebookofshaders.com/10/

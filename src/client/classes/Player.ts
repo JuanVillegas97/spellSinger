@@ -39,6 +39,7 @@ export class Player extends Model{
         body: body,
         ){
         super(model,mixer,animationsMap,currentAction,body)
+        this.incomeDamage=0.005
         this.lifeBar.position.y=this.model.position.y+4.3
         this.model.add(this.lifeBar)
         this.particles=particles
@@ -46,7 +47,7 @@ export class Player extends Model{
 
     public update(delta:number, keysPressed:any, mouseButtonsPressed:any, camera:THREE.PerspectiveCamera) : void {
         this.lifeBar.lookAt(camera.position)
-        this.lifeAction()
+        this.lifeAction(this.incomeDamage)
         const ball = this.ball
         const model = this.model
         const lookingAt = this.lookingAt

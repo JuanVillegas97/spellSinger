@@ -3,6 +3,7 @@ import * as THREE from 'three'
 export interface body {shape: THREE.Mesh, skeleton: THREE.Box3}
 export class Model{
     protected readonly fadeDuration : number = .2
+    protected incomeDamage : number = 0
     protected lifeBar = new THREE.Mesh(new THREE.PlaneGeometry(2,.2), new THREE.MeshBasicMaterial({color: 0x00ff00}))
     protected model: THREE.Group
     protected mixer: THREE.AnimationMixer
@@ -36,7 +37,7 @@ export class Model{
         }
         this.mixer.update(delta)
     }
-    
+
     public getModel(): THREE.Group{
         return this.model
     }
@@ -55,10 +56,10 @@ export class Model{
         this.isCollading = value
     }
 
-    protected lifeAction(){
+    protected lifeAction(damage:number) : void{
         const lifeBar = this.lifeBar
         if(this.isCollading){
-            lifeBar.scale.sub(new THREE.Vector3(0.005,0,0));
+            lifeBar.scale.sub(new THREE.Vector3(damage,0,0));
             lifeBar.scale.clampScalar(0,1);
             if (lifeBar.scale.x <= 0) {
                 this.play ="die"
@@ -69,5 +70,12 @@ export class Model{
         } else {
             this.play='idle'
         } 
+    }
+
+    public getPlay(): string{
+        return this.play
+    }
+    public setDamage(damage:number) : void{
+        this.incomeDamage=damage
     }
 }
