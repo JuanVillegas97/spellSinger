@@ -91,7 +91,6 @@ function animate() : void {
     // dragon ? dragon.update(delta, player.getModel().position,player.getModel().rotation) : null
     mutant ?  mutant.update(delta,app.scene,app.camera,player.getModel()) : null
     
-    cannonDebugRenderer.update()
 
     skyboxMesh ? skyboxMesh.position.copy( app.camera.position ):null
 
@@ -123,7 +122,7 @@ function animate() : void {
     }
 
     app.world.step(Math.min(delta, 0.1))
-    cannonDebugRenderer.update()
+    // cannonDebugRenderer.update()
     app.renderer.render(app.scene, app.camera)
     requestAnimationFrame(animate)
 }
