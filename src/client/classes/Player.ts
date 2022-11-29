@@ -24,7 +24,7 @@ export class Player extends Model{
     public ballMeshes : THREE.Mesh[] = []
     public particles : any
     private balldirection = {x:0,y:0,z:0}
-    private ballposition = {x:0,y:0,z:0}
+    private ballposition = {x:0,y:-2,z:0}
     private ballScale = 0;
     private lookingAt=''
     private ballColor=''
