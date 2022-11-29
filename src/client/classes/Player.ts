@@ -14,12 +14,10 @@ interface ball {
 }
 
 export class Player extends Model{
-    private readonly fadeDuration : number = .2
     private readonly runVelocity : number = .4
     private readonly walkVelocity :number = .1
     private boundAttack = this.shoot.bind(this)
     private lookingAt = ''
-    private play = ''
     private toggleRun: boolean = true
     public particles : any
     public balls : CANNON.Body[] = []

@@ -3,12 +3,10 @@ import * as THREE from 'three'
 import { Model, body } from './Model'
 
 export class Mutant extends Model{
-   private raycaster = new THREE.Raycaster();
-   private readonly fadeDuration : number = .2
    private search: THREE.Vector3[] = [];
    private minAngle = 75;
    private maxAngle = 220;
-   private play = ''
+   
 
     //HP
    private hpMat = new THREE.MeshBasicMaterial({color: 0x00ff00});
@@ -59,14 +57,9 @@ export class Mutant extends Model{
       } else {
          this.play='idle'
       } 
-      if (this.currentAction != this.play) {
-         const toPlay= this.animationsMap.get(this.play)
-         const current = this.animationsMap.get(this.currentAction)
-         current?.fadeOut(this.fadeDuration)
-         toPlay?.reset().fadeIn(this.fadeDuration).play().setLoop(THREE.LoopOnce,1)
-         this.currentAction = this.play
-   }
-      this.mixer.update(delta)
+      
+
+      this.updateAnimations(delta)
       this.gettingCloser(playerModel)
 
       const shape = this.body.shape
