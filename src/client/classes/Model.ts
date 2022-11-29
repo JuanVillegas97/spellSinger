@@ -9,7 +9,7 @@ export class Model{
     protected currentAction: string
     protected body : body
     protected play = ''
-    
+    protected isCollading = false
     constructor(
         model: THREE.Group, 
         mixer: THREE.AnimationMixer,  
@@ -39,7 +39,7 @@ export class Model{
         return this.model
     }
 
-    public checkCollision(a:THREE.Box3, b: THREE.Box3) : Boolean{
+    public checkCollision(a:THREE.Box3, b: THREE.Box3) : boolean{
         if(a.intersectsBox(b)||a.containsBox(b)){
             return true
         }
@@ -47,5 +47,9 @@ export class Model{
     }
     public getSkeleton() : THREE.Box3{
         return this.body.skeleton
+    }
+
+    public setCollading(value:boolean) : void {
+        this.isCollading = value
     }
 }

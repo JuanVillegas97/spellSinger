@@ -35,17 +35,6 @@ const leavesMaterial : THREE.ShaderMaterial = shaderLeaves() //leaves
 
 
 
-
-const cube2 = new THREE.Mesh(
-    new THREE.BoxGeometry(2,8,1),
-    new THREE.MeshPhongMaterial({color:0Xff0000})
-)
-cube2.position.set(0,0,10)
-let cube2BB = new THREE.Box3(new THREE.Vector3(),new THREE.Vector3())
-cube2BB.setFromObject(cube2)
-app.scene.add(cube2)
-
-
 // initLeaves()
 initPlane() 
 initPlayer()
@@ -72,7 +61,6 @@ function animate() : void {
     }
     const delta = clock.getDelta()
 
-
     // checkCollision()
 
 	leavesMaterial.uniforms.time.value = clock.getElapsedTime()
@@ -81,11 +69,14 @@ function animate() : void {
     // dragon ? dragon.update(delta, player.getModel().position,player.getModel().rotation) : null
     mutant ?  mutant.update(delta,app.camera,player.getModel()) : null
     
+    if(player && mutant){
+        mutant.setCollading(player.checkCollision(mutant.getSkeleton(),player.getSkeleton()))
+    }
 
     skyboxMesh ? skyboxMesh.position.copy( app.camera.position ):null
 
     if(player){
-        console.log(player.checkCollision(cube2BB,player.getSkeleton()))
+        
         player.update(delta,keysPressed,mouseButtonsPressed) 
         app.camera.position.x = player.getModel().position.x
         app.camera.lookAt(player.getModel().position)
