@@ -23,11 +23,8 @@ export class Player extends Model{
     private play = ''
     private toggleRun: boolean = true
     public particles : any
-
-    
     public balls : CANNON.Body[]= []
     public ballMeshes : THREE.Mesh[] = []
-
     private ball : ball = {
     direction:{x:0, y:0, z:0},
     position : {x:0, y:0, z:0},
@@ -35,7 +32,6 @@ export class Player extends Model{
     color :'',
     speed : 0
     }
-
     
     constructor(
         model: THREE.Group, 
@@ -48,8 +44,86 @@ export class Player extends Model{
         this.particles=particles
     }
 
+    public update(delta:number, keysPressed:any, mouseButtonsPressed:any) : void {
+        const ball = this.ball
+        const model = this.model
+        const lookingAt = this.lookingAt
+        const directionPressed = ['w','a','s','d'].some(key => keysPressed[key] == true)
+        const clickPressed =['left','middle','right'].some(key => mouseButtonsPressed[key] == true)
+        
+        if(keysPressed.d==true) this.lookingAt= 'right';
+        if(keysPressed.a==true) this.lookingAt= 'left';
+        if(keysPressed.s==true) this.lookingAt= 'down';
+        if(keysPressed.w==true) this.lookingAt= 'up';
 
-    private shoot() : void{
+        if(model.position.z>10 ) model.position.z=10;
+        if(model.position.x<-30) model.position.x=-30;
+        if(model.position.x>30 ) model.position.x=30;
+        if(model.position.z<-10) model.position.z=-10;
+
+        if (directionPressed && this.toggleRun) {
+            this.play = 'walk'
+        } else if (directionPressed) {
+            this.play = 'run.001' //walking
+        } else if(clickPressed){
+            if(mouseButtonsPressed.left){
+                this.play = '1H_attack' 
+                if(lookingAt=='right'){ ball.position={x:1,y:3,z:1};  ball.direction={x:1,y:0,z:0}}
+                if(lookingAt=='left') { ball.position={x:-1,y:3,z:-2};ball.direction={x:-1,y:0,z:0}}
+                if(lookingAt=='up')   { ball.position={x:1,y:3,z:-2}; ball.direction={x:0,y:0,z:-1}}
+                if(lookingAt=='down') { ball.position={x:-1,y:3,z:2}; ball.direction={x:0,y:0,z:1}}
+                ball.color='#061258'
+                ball.scale=.2
+                ball.speed=10
+            }
+            if(mouseButtonsPressed.right){
+                this.play = '2H_attack' 
+                if(lookingAt=='right'){ ball.position={x:2.5,y:3,z:1};  ball.direction={x:1,y:0,z:0}}
+                if(lookingAt=='left') { ball.position={x:-2.5,y:3,z:-2};ball.direction={x:-1,y:0,z:0}}
+                if(lookingAt=='up')   { ball.position={x:1,y:3,z:-2.5}; ball.direction={x:0,y:0,z:-1}}
+                if(lookingAt=='down') { ball.position={x:-1,y:3,z:2.5}; ball.direction={x:0,y:0,z:1}}
+                ball.color='#2EE866'
+                ball.scale=.5
+                ball.speed=18
+            }
+            if(mouseButtonsPressed.middle){
+                this.play = 'AOE' 
+                if(lookingAt=='right'){ball.position={x:1,y:6,z:1};  ball.direction={x:1,y:-1,z:0}}
+                if(lookingAt=='left') {ball.position={x:-1,y:6,z:-2};ball.direction={x:-1,y:-1,z:0}}
+                if(lookingAt=='up')   {ball.position={x:1,y:6,z:-2}; ball.direction={x:0,y:-1,z:0}}
+                if(lookingAt=='down') {ball.position={x:-1,y:6,z:2}; ball.direction={x:0,y:-1,z:0}}
+                ball.scale=.8
+                ball.color=colors.redPFX
+                ball.speed=10
+            }
+            this.mixer.addEventListener( 'loop', this.boundAttack)
+        }else {
+            this.play = 'idle'
+        }
+        if (this.currentAction != this.play) {
+            const toPlay= this.animationsMap.get(this.play)
+            const current = this.animationsMap.get(this.currentAction)
+            current?.fadeOut(this.fadeDuration)
+            toPlay?.reset().fadeIn(this.fadeDuration).play()
+            this.currentAction = this.play
+        }
+        this.mixer.update(delta)
+        if (this.currentAction == 'run.001' || this.currentAction == 'walk') {
+            const velocity = this.currentAction == 'run.001' ? this.runVelocity : this.walkVelocity
+            if(keysPressed.d){model.position.x += velocity; model.rotation.y = 1.5}
+            if(keysPressed.a){model.position.x -= velocity; model.rotation.y = -1.5}
+            if(keysPressed.s){model.position.z += velocity; model.rotation.y = 0}
+            if(keysPressed.w){model.position.z -= velocity; model.rotation.y = 3}
+        }
+        // this.model.position.set(this.body.position.x,this.body.position.y-2,this.body.position.z)//!CHECK THIS
+        this.mixer.removeEventListener('loop',this.boundAttack)
+        this.updateBullets()
+    }
+    public switchRunToggle() : void {
+        this.toggleRun = !this.toggleRun
+    }
+
+    private shoot() : void {
         const scale = this.ball.scale
         const color = this.ball.color
         const direction = this.ball.direction
@@ -80,129 +154,6 @@ export class Player extends Model{
         )
     }
 
-    public update(delta:number, keysPressed:any, mouseButtonsPressed:any) : void {
-        const directionPressed = ['w','a','s','d'].some(key => keysPressed[key] == true)
-        const clickPressed =['left','middle','right'].some(key => mouseButtonsPressed[key] == true)
-
-        if(this.model.position.z<-10) this.model.position.z=-10;
-        if(this.model.position.z>10 ) this.model.position.z=10;
-        if(this.model.position.x<-30) this.model.position.x=-30;
-        if(this.model.position.x>30 ) this.model.position.x=30;
-
-        if(keysPressed.d==true) this.lookingAt= 'right';
-        if(keysPressed.a==true) this.lookingAt= 'left';
-        if(keysPressed.s==true) this.lookingAt= 'down';
-        if(keysPressed.w==true) this.lookingAt= 'up';
-        
-        this.play = ''
-        if (directionPressed && this.toggleRun) {
-            this.play = 'walk'
-        } else if (directionPressed) {
-            this.play = 'run.001' //walking
-        } else if(clickPressed){
-            if(mouseButtonsPressed.left){
-                this.play = '1H_attack' 
-                if(this.lookingAt=='right'){
-                    this.ball.position={x:1,y:3,z:1}
-                    this.ball.direction={x:1,y:0,z:0}
-                }
-                if(this.lookingAt=='left'){
-                    this.ball.position={x:-1,y:3,z:-2}
-                    this.ball.direction={x:-1,y:0,z:0}
-                }
-                if(this.lookingAt=='up'){
-                    this.ball.position={x:1,y:3,z:-2}
-                    this.ball.direction={x:0,y:0,z:-1}
-                }
-                if(this.lookingAt=='down'){
-                    this.ball.position={x:-1,y:3,z:2}
-                    this.ball.direction={x:0,y:0,z:1}
-                }
-                this.ball.color='#061258'
-                this.ball.scale=.2
-                this.ball.speed=10
-            }
-            if(mouseButtonsPressed.right){
-                this.play = '2H_attack' 
-                if(this.lookingAt=='right'){
-                    this.ball.position={x:2.5,y:3,z:1}
-                    this.ball.direction={x:1,y:0,z:0}
-                }
-                if(this.lookingAt=='left'){
-                    this.ball.position={x:-2.5,y:3,z:-2}
-                    this.ball.direction={x:-1,y:0,z:0}
-                }
-                if(this.lookingAt=='up'){
-                    this.ball.position={x:1,y:3,z:-2.5}
-                    this.ball.direction={x:0,y:0,z:-1}
-                }
-                if(this.lookingAt=='down'){
-                    this.ball.position={x:-1,y:3,z:2.5}
-                    this.ball.direction={x:0,y:0,z:1}
-                }
-                this.ball.color='#2EE866'
-                this.ball.scale=.5
-                this.ball.speed=18
-            }
-            if(mouseButtonsPressed.middle){
-                if(this.lookingAt=='right'){
-                    this.ball.position={x:1,y:6,z:1}
-                    this.ball.direction={x:1,y:-1,z:0}
-                }
-                if(this.lookingAt=='left'){
-                    this.ball.position={x:-1,y:6,z:-2}
-                    this.ball.direction={x:-1,y:-1,z:0}
-                }
-                if(this.lookingAt=='up'){
-                    this.ball.position={x:1,y:6,z:-2}
-                    this.ball.direction={x:0,y:-1,z:0}
-                }
-                if(this.lookingAt=='down'){
-                    this.ball.position={x:-1,y:6,z:2}
-                    this.ball.direction={x:0,y:-1,z:0}
-                }
-                this.ball.scale=.8
-                this.ball.color=colors.redPFX
-                this.play = 'AOE' 
-                this.ball.speed=10
-            }
-            this.mixer.addEventListener( 'loop', this.boundAttack)
-        }else {
-            this.play = 'idle'
-        }
-        if (this.currentAction != this.play) {
-            const toPlay= this.animationsMap.get(this.play)
-            const current = this.animationsMap.get(this.currentAction)
-
-            current?.fadeOut(this.fadeDuration)
-            toPlay?.reset().fadeIn(this.fadeDuration).play()
-            this.currentAction = this.play
-        }
-        this.mixer.update(delta)
-        if (this.currentAction == 'run.001' || this.currentAction == 'walk') {
-            const velocity = this.currentAction == 'run.001' ? this.runVelocity : this.walkVelocity
-            if(keysPressed.d){
-                this.model.position.x += velocity
-                this.model.rotation.y = 1.5
-            }
-            if(keysPressed.a){
-                this.model.position.x -= velocity
-                this.model.rotation.y = -1.5
-            }
-            if(keysPressed.s){
-                this.model.position.z += velocity
-                this.model.rotation.y = 0
-            }
-            if(keysPressed.w){
-                this.model.position.z -= velocity
-                this.model.rotation.y = 3
-            }
-        }
-        // this.model.position.set(this.body.position.x,this.body.position.y-2,this.body.position.z)//!CHECK THIS
-        this.mixer.removeEventListener('loop',this.boundAttack)
-        this.updateBullets()
-
-    }
     private updateBullets() : void {
         const balls = this.balls
         const ballMeshes = this.ballMeshes
@@ -210,7 +161,7 @@ export class Player extends Model{
             ballMeshes[i].position.set(balls[i].position.x,balls[i].position.y,balls[i].position.z)
             ballMeshes[i].quaternion.set(balls[i].quaternion.x,balls[i].quaternion.y,balls[i].quaternion.z,balls[i].quaternion.w)
             this.particles.emitters.forEach((a:any) => {
-                a.position.set(this.balls[i].position.x,this.balls[i].position.y,this.balls[i].position.z)
+                a.position.set(balls[i].position.x,balls[i].position.y,balls[i].position.z)
                 a.position.scale=.1
                 a.dead=false
                 if(this.play == "1H_attack") {
@@ -224,9 +175,7 @@ export class Player extends Model{
         }
     }
     
-    public switchRunToggle() : void {
-        this.toggleRun = !this.toggleRun
-    }
+    
 }
 
 
