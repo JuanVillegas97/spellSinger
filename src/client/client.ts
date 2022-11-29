@@ -161,6 +161,8 @@ function initMutant():void {
         const shape = new THREE.Mesh(new THREE.BoxGeometry(2,8,1),new THREE.MeshPhongMaterial({color:0Xff0000}))
         const skeleton = new THREE.Box3(new THREE.Vector3(),new THREE.Vector3())
         const body : body = {shape: shape, skeleton: skeleton}
+
+
         shape.visible=true//? CHECK THIS FOR LATER
         skeleton.setFromObject(shape)
         model.name = 'Mutant'
