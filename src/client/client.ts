@@ -38,7 +38,8 @@ const cube1 = new THREE.Mesh(
     new THREE.MeshPhongMaterial({color:0Xff0000})
 )
 
-cube1.visible=false
+cube1.visible=true
+
 let cube1BB = new THREE.Box3(new THREE.Vector3(),new THREE.Vector3())
 cube1BB.setFromObject(cube1)
 app.scene.add(cube1)
@@ -58,7 +59,7 @@ initPlane()
 initPlayer()
 initLight() 
 
-//  initMutant()
+ initMutant()
 // initDragon() 
 initSky()
 

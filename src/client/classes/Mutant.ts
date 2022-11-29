@@ -77,7 +77,7 @@ export class Mutant extends Model{
          this.currentAction = this.play
    }
       this.mixer.update(delta)
-      // this.gettingCloser(playerModel)
+      this.gettingCloser(playerModel)
       //   this.raycastCheck(scene,playerModel)
    }
 
