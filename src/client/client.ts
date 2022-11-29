@@ -1,17 +1,18 @@
-import * as THREE from 'three'
-import * as CANNON from 'cannon-es'
-import {  GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
-import { Player } from './classes/Player'
-// import { DragonPatron } from './classes/DragonPatron'
-import CannonDebugRenderer from './utils/cannonDebugRenderer'
-import getThreeApp, { scene } from "./classes/App"
-import { Mutant } from './classes/Mutant'
 // @ts-ignore
 import Nebula, { SpriteRenderer } from 'three-nebula'
 // @ts-ignore
 import json from "./particles/blue.json"
 // @ts-ignore
 import { Water } from "./utils/Water2.js"
+import * as THREE from 'three'
+import * as CANNON from 'cannon-es'
+import CannonDebugRenderer from './utils/cannonDebugRenderer'
+import getThreeApp from "./classes/App"
+import {  GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
+import { Player } from './classes/Player'
+import { Mutant } from './classes/Mutant'
+import { body } from './classes/Model'
+// import { DragonPatron } from './classes/DragonPatron'
 
 // Scene, camera, renderer, world
 const app = getThreeApp()
@@ -27,22 +28,13 @@ const loader = new GLTFLoader()
 
 let player : Player  
 // let dragon : DragonPatron
- let mutant : Mutant
+let mutant : Mutant
 let skyboxMesh : THREE.Mesh
 let nebula : any
 const leavesMaterial : THREE.ShaderMaterial = shaderLeaves() //leaves
 
 
-const cube1 = new THREE.Mesh(
-    new THREE.BoxGeometry(2,8,1),
-    new THREE.MeshPhongMaterial({color:0Xff0000})
-)
 
-cube1.visible=true
-
-let cube1BB = new THREE.Box3(new THREE.Vector3(),new THREE.Vector3())
-cube1BB.setFromObject(cube1)
-app.scene.add(cube1)
 
 const cube2 = new THREE.Mesh(
     new THREE.BoxGeometry(2,8,1),
@@ -59,15 +51,15 @@ initPlane()
 initPlayer()
 initLight() 
 
- initMutant()
+initMutant()
 // initDragon() 
 initSky()
 
-function checkCollision(){
-    if(cube2BB.intersectsBox(cube1BB)||cube2BB.containsBox(cube1BB)){
-        console.log('INTERSECTS')
-    }
-}
+// function checkCollision(){
+//     if(cube2BB.intersectsBox(cube1BB)||cube2BB.containsBox(cube1BB)){
+//         console.log('INTERSECTS')
+//     }
+// }
 
 let removeBody:any;
 let bodi: any
@@ -81,21 +73,19 @@ function animate() : void {
     const delta = clock.getDelta()
 
 
-    player ? cube1.position.copy(player.getModel().position): null
-
-    if(cube1.geometry.boundingBox){cube1BB.copy(cube1.geometry.boundingBox).applyMatrix4(cube1.matrixWorld)}
-    checkCollision()
+    // checkCollision()
 
 	leavesMaterial.uniforms.time.value = clock.getElapsedTime()
     leavesMaterial.uniformsNeedUpdate = true
     nebula ? nebula.update() : null
     // dragon ? dragon.update(delta, player.getModel().position,player.getModel().rotation) : null
-    mutant ?  mutant.update(delta,app.scene,app.camera,player.getModel()) : null
+    mutant ?  mutant.update(delta,app.camera,player.getModel()) : null
     
 
     skyboxMesh ? skyboxMesh.position.copy( app.camera.position ):null
 
     if(player){
+        console.log(player.checkCollision(cube2BB,player.getSkeleton()))
         player.update(delta,keysPressed,mouseButtonsPressed) 
         app.camera.position.x = player.getModel().position.x
         app.camera.lookAt(player.getModel().position)
@@ -137,21 +127,23 @@ function initPlayer() : void {
         const gltfAnimations: THREE.AnimationClip[] = gltf.animations
         const mixer = new THREE.AnimationMixer(model)
         const animationMap: Map<string, THREE.AnimationAction> = new Map()
+        const shape = new THREE.Mesh(new THREE.BoxGeometry(2,8,1),new THREE.MeshPhongMaterial({color:0Xff0000}))
+        const skeleton = new THREE.Box3(new THREE.Vector3(),new THREE.Vector3())
+        const body : body = {shape: shape, skeleton: skeleton}
         gltfAnimations.filter(a=> a.name != 'Armature.001|mixamo.com|Layer0').forEach((a:THREE.AnimationClip)=>{
             animationMap.set(a.name,mixer.clipAction(a))
         })
-
-        
-
+        shape.visible=true//? CHECK THIS FOR LATER
+        skeleton.setFromObject(shape)
         model.name = 'Warlock'
         model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
+        app.scene.add(shape)
         app.scene.add(model)
         Nebula.fromJSONAsync(json, THREE).then((particle:any) => {
             const nebulaRenderer = new SpriteRenderer(app.scene, THREE)
-            player = new Player(model,mixer,animationMap,'idle',particle)
-            nebula = particle.addRenderer(nebulaRenderer);
+            player = new Player(model,mixer,animationMap,'idle',particle,body)
+            nebula = particle.addRenderer(nebulaRenderer)
         })
-        
     })
 }
 
@@ -166,22 +158,23 @@ function initMutant():void {
         gltfAnimations.forEach((a:THREE.AnimationClip)=>{
             animationMap.set(a.name,mixer.clipAction(a))
         })
-        const shape =  new CANNON.Cylinder(2, 2, 9, 12)
-        const body = new CANNON.Body({ mass: 1, shape: shape})
-        body.position.y = 5
-        body.position.x = 15
+        const shape = new THREE.Mesh(new THREE.BoxGeometry(2,8,1),new THREE.MeshPhongMaterial({color:0Xff0000}))
+        const skeleton = new THREE.Box3(new THREE.Vector3(),new THREE.Vector3())
+        const body : body = {shape: shape, skeleton: skeleton}
+        shape.visible=true//? CHECK THIS FOR LATER
+        skeleton.setFromObject(shape)
         model.name = 'Mutant'
         model.position.y= 0
         model.position.x= 15
         model.rotateY(-1)
         model.scale.set(4,4,4)
         model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
+        app.scene.add(shape)
         app.scene.add(model)
-        app.world.addBody(body)
-        mutant = new Mutant(model,mixer,animationMap,'idle')
-    }
-    )
+        mutant = new Mutant(model,mixer,animationMap,'idle',body)
+    })
 }
+
 // Skybox
 function initSky() : void {
     const ft = new THREE.TextureLoader().load("/skybox/bluecloud_ft.jpg");

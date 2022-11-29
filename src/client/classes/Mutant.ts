@@ -1,7 +1,6 @@
 import * as THREE from 'three'
-import * as CANNON from 'cannon-es'
 
- import { Model } from './Model'
+import { Model, body } from './Model'
 
 export class Mutant extends Model{
    private raycaster = new THREE.Raycaster();
@@ -22,24 +21,17 @@ export class Mutant extends Model{
       mixer: THREE.AnimationMixer,  
       animationsMap: Map<string, THREE.AnimationAction>,
       currentAction: string,
+      body: body,
+
       ) {
-      super(model,mixer,animationsMap,currentAction)
+      super(model,mixer,animationsMap,currentAction,body)
       // console.log(this.search)
       this.hpBar.position.y=this.model.position.y+1.8;
       this.hpBar.name = "hpBar";
       this.model.add(this.hpBar);
    }
 
-   public update(delta:number,scene:THREE.Scene,camera:THREE.PerspectiveCamera, playerModel:THREE.Group) : void{
-      // this.body.addEventListener("collide",(e:any)=>{
-      //    console.log(e)
-      // })
-        // this.body.position.set(posVec.x-10,posVec.y+10,posVec.z)
-        // this.model.position.set(posVec.x-10,posVec.y-2,posVec.z)
-        // this.model.rotation.y = rotation.y-.3
-      for(let i = this.minAngle; i<this.maxAngle; i+=15) {
-         this.search[i] = new THREE.Vector3(Math.cos(i * (Math.PI / 180)),1,Math.sin(i * (Math.PI / 180)))
-      }
+   public update(delta:number,camera:THREE.PerspectiveCamera, playerModel:THREE.Group) : void{
         //animation checks
       this.play='idle'
 
@@ -64,21 +56,23 @@ export class Mutant extends Model{
                //animate recoil to dmg
                //this.play='recoil'
             }
-
       } else {
          this.play='idle'
       } 
       if (this.currentAction != this.play) {
          const toPlay= this.animationsMap.get(this.play)
          const current = this.animationsMap.get(this.currentAction)
-
          current?.fadeOut(this.fadeDuration)
          toPlay?.reset().fadeIn(this.fadeDuration).play().setLoop(THREE.LoopOnce,1)
          this.currentAction = this.play
    }
       this.mixer.update(delta)
       this.gettingCloser(playerModel)
-      //   this.raycastCheck(scene,playerModel)
+
+      const shape = this.body.shape
+      const skeleton = this.body.skeleton
+      shape.position.copy(this.model.position)
+      if(shape.geometry.boundingBox){skeleton.copy(shape.geometry.boundingBox).applyMatrix4(shape.matrixWorld)}
    }
 
    public attack():void {
@@ -92,38 +86,4 @@ export class Mutant extends Model{
       if (player.position.x < this.model.position.x ){this.model.position.x -= .1; this.model.rotation.y=-1.5}
       // this.model.position.set(this.model.position.x,this.model.position.y-5,this.model.position.z)//!CHECK THIS
    }
-
-   // public raycastCheck(scene: THREE.Scene, playerModel:THREE.Group):void {
-   //    const dampSpeed = .005
-   //    const far = 15
-   //    const distance = this.model.position.distanceTo(playerModel.position)
-   //    const distanceVec = new THREE.Vector3().subVectors(this.model.position,playerModel.position)
-   //    if( ( distance< far) ) {
-
-   //       this.search.forEach((direction) => {
-   //          const angleDeg = playerModel.position.dot(this.model.position)
-   //          console.log(angleDeg)
-   //         // console.log(this.model.position)
-   //          // console.log(intersects?.[0]?.object?.name)
-   //          if ((this.minAngle<=angleDeg && angleDeg<=this.maxAngle)) {
-   //             this.model.position.x += direction.x*dampSpeed;
-   //             this.model.position.z += direction.z*dampSpeed; 
-   //             this.body.position.x += direction.x*dampSpeed;
-   //             this.body.position.z += direction.z*dampSpeed;
-   //             // this.gotHit = true;
-   //          } else {
-   //             this.model.position.x -= direction.x*dampSpeed;
-   //             this.model.position.z -= direction.z*dampSpeed; 
-   //             this.body.position.x -= direction.x*dampSpeed;
-   //             this.body.position.z -= direction.z*dampSpeed;
-   //            // this.gotHit = false
-   //          }
-   //       //    if (100<=angleDeg && angleDeg<=105) {
-   //       //       console.log("rotateY")
-   //       //       this.model.rotateY(.5)
-   //       //   }
-   //    })
-   //    } 
-
-   // }
 }
