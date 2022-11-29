@@ -1,12 +1,8 @@
 import * as THREE from 'three'
 import * as CANNON from 'cannon-es'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import {  GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
-import { MTLLoader} from 'three/examples/jsm/loaders/MTLLoader'
-import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader'
-import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
 import { Player } from './classes/Player'
-import { DragonPatron } from './classes/DragonPatron'
+// import { DragonPatron } from './classes/DragonPatron'
 import CannonDebugRenderer from './utils/cannonDebugRenderer'
 import getThreeApp, { scene } from "./classes/App"
 import { Mutant } from './classes/Mutant'
@@ -14,9 +10,8 @@ import { Mutant } from './classes/Mutant'
 import Nebula, { SpriteRenderer } from 'three-nebula'
 // @ts-ignore
 import json from "./particles/blue.json"
-import { Color } from 'three'
-import { Model } from './classes/Model'
-
+// @ts-ignore
+import { Water } from "./utils/Water2.js"
 
 // Scene, camera, renderer, world
 const app = getThreeApp()
@@ -31,13 +26,32 @@ const textureLoader = new THREE.TextureLoader()
 const loader = new GLTFLoader()
 
 let player : Player  
-let dragon : DragonPatron
+// let dragon : DragonPatron
  let mutant : Mutant
 let skyboxMesh : THREE.Mesh
 let nebula : any
 const leavesMaterial : THREE.ShaderMaterial = shaderLeaves() //leaves
 
 
+const cube1 = new THREE.Mesh(
+    new THREE.BoxGeometry(2,8,1),
+    new THREE.MeshPhongMaterial({color:0Xff0000})
+)
+
+cube1.visible=true
+
+let cube1BB = new THREE.Box3(new THREE.Vector3(),new THREE.Vector3())
+cube1BB.setFromObject(cube1)
+app.scene.add(cube1)
+
+const cube2 = new THREE.Mesh(
+    new THREE.BoxGeometry(2,8,1),
+    new THREE.MeshPhongMaterial({color:0Xff0000})
+)
+cube2.position.set(0,0,10)
+let cube2BB = new THREE.Box3(new THREE.Vector3(),new THREE.Vector3())
+cube2BB.setFromObject(cube2)
+app.scene.add(cube2)
 
 
 // initLeaves()
@@ -49,6 +63,11 @@ initLight()
 // initDragon() 
 initSky()
 
+function checkCollision(){
+    if(cube2BB.intersectsBox(cube1BB)||cube2BB.containsBox(cube1BB)){
+        console.log('INTERSECTS')
+    }
+}
 
 let removeBody:any;
 let bodi: any
@@ -60,24 +79,26 @@ function animate() : void {
         app.world.removeBody(bodi)
     }
     const delta = clock.getDelta()
+
+
+    player ? cube1.position.copy(player.getModel().position): null
+
+    if(cube1.geometry.boundingBox){cube1BB.copy(cube1.geometry.boundingBox).applyMatrix4(cube1.matrixWorld)}
+    checkCollision()
+
 	leavesMaterial.uniforms.time.value = clock.getElapsedTime()
     leavesMaterial.uniformsNeedUpdate = true
-
-
     nebula ? nebula.update() : null
-    dragon ? dragon.update(delta, player.getModel().position,player.getModel().rotation) : null
-
-
-     mutant ?  mutant.update(delta,app.scene,app.camera,player.getModel()) : null
+    // dragon ? dragon.update(delta, player.getModel().position,player.getModel().rotation) : null
+    mutant ?  mutant.update(delta,app.scene,app.camera,player.getModel()) : null
     
-    cannonDebugRenderer.update()
 
     skyboxMesh ? skyboxMesh.position.copy( app.camera.position ):null
 
     if(player){
+        player.update(delta,keysPressed,mouseButtonsPressed) 
         app.camera.position.x = player.getModel().position.x
         app.camera.lookAt(player.getModel().position)
-        player.update(delta,keysPressed,mouseButtonsPressed) 
 
         for (let index = 0; index < player.ballMeshes.length; index++) {
             
@@ -102,7 +123,7 @@ function animate() : void {
     }
 
     app.world.step(Math.min(delta, 0.1))
-    cannonDebugRenderer.update()
+    // cannonDebugRenderer.update()
     app.renderer.render(app.scene, app.camera)
     requestAnimationFrame(animate)
 }
@@ -119,17 +140,18 @@ function initPlayer() : void {
         gltfAnimations.filter(a=> a.name != 'Armature.001|mixamo.com|Layer0').forEach((a:THREE.AnimationClip)=>{
             animationMap.set(a.name,mixer.clipAction(a))
         })
-        const body = new CANNON.Body({ mass: 0, shape: new CANNON.Cylinder(1, 1, 4, 12)})
-        body.position.y = 3
+
+        
+
         model.name = 'Warlock'
         model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
         app.scene.add(model)
-        app.world.addBody(body)
         Nebula.fromJSONAsync(json, THREE).then((particle:any) => {
             const nebulaRenderer = new SpriteRenderer(app.scene, THREE)
-            player = new Player(model,mixer,animationMap,'idle',body,particle)
+            player = new Player(model,mixer,animationMap,'idle',particle)
             nebula = particle.addRenderer(nebulaRenderer);
         })
+        
     })
 }
 
@@ -145,18 +167,18 @@ function initMutant():void {
             animationMap.set(a.name,mixer.clipAction(a))
         })
         const shape =  new CANNON.Cylinder(2, 2, 9, 12)
-        const body = new CANNON.Body({ mass: 0, shape: shape})
+        const body = new CANNON.Body({ mass: 1, shape: shape})
         body.position.y = 5
         body.position.x = 15
         model.name = 'Mutant'
         model.position.y= 0
         model.position.x= 15
         model.rotateY(-1)
-        model.scale.set(5,5,5)
+        model.scale.set(4,4,4)
         model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
         app.scene.add(model)
         app.world.addBody(body)
-        mutant = new Mutant(model,mixer,animationMap,'idle',body)
+        mutant = new Mutant(model,mixer,animationMap,'idle')
     }
     )
 }
@@ -354,28 +376,28 @@ function shaderLeaves(){
 }
 
 
-function initDragon() : void {
-    loader.load('/models/bigboie.glb',function (gltf) {
-        const model = gltf.scene
-        const gltfAnimations: THREE.AnimationClip[] = gltf.animations
-        const mixer = new THREE.AnimationMixer(model)
-        const animationMap: Map<string, THREE.AnimationAction> = new Map()
-        gltfAnimations.forEach((a:THREE.AnimationClip)=>{
-            animationMap.set(a.name,mixer.clipAction(a))
-        })
-        const shape =  new CANNON.Cylinder(1, 1, .5, 12)
-        const body = new CANNON.Body({ mass: 1, shape: shape})
-        model.name = 'DragonPatron'
-        model.position.y= -10
-        model.rotateY(1)
-        model.scale.set(4,4,4)
-        model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
-        app.scene.add(model)
-        dragon = new DragonPatron(model,mixer,animationMap,'Flying',body)
-       // dragon.matrix = gltf.scene.matrix;
-        }
-    )
-}
+// function initDragon() : void {
+//     loader.load('/models/bigboie.glb',function (gltf) {
+//         const model = gltf.scene
+//         const gltfAnimations: THREE.AnimationClip[] = gltf.animations
+//         const mixer = new THREE.AnimationMixer(model)
+//         const animationMap: Map<string, THREE.AnimationAction> = new Map()
+//         gltfAnimations.forEach((a:THREE.AnimationClip)=>{
+//             animationMap.set(a.name,mixer.clipAction(a))
+//         })
+//         const shape =  new CANNON.Cylinder(1, 1, .5, 12)
+//         const body = new CANNON.Body({ mass: 1, shape: shape})
+//         model.name = 'DragonPatron'
+//         model.position.y= -10
+//         model.rotateY(1)
+//         model.scale.set(4,4,4)
+//         model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
+//         app.scene.add(model)
+//         dragon = new DragonPatron(model,mixer,animationMap,'Flying',body)
+//        // dragon.matrix = gltf.scene.matrix;
+//         }
+//     )
+// }
 
 
 // Resize handler
@@ -401,12 +423,6 @@ document.addEventListener('keyup', (event) => {
     (keysPressed as any)[event.key.toLowerCase()] = false
 }, false)
 
-// window.addEventListener('mousedown',(e)=>{
-//     setTimeout(function() {
-//         console.log('hi')
-
-//       }, 500);
-// })
 
 //Mouse listener
 const mouseButtonsPressed ={ }

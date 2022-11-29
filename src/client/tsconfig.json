@@ -6,5 +6,5 @@
         "moduleResolution": "node",
         "strict": true
     },
-    "include": ["**/*.ts","**/*.json"]
+    "include": ["**/*.ts","**/*.json", "utils/Reflector.js", "utils/Water2.js", "utils/Water2.js"]
 }
