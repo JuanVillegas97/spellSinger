@@ -24,10 +24,17 @@ export class Player extends Model{
     public ballMeshes : THREE.Mesh[] = []
     public particles : any
     private balldirection = {x:0,y:0,z:0}
-    private ballposition = {x:0,y:0,z:0}
+    private ballposition = {x:0,y:-2,z:0}
     private ballScale = 0;
     private lookingAt=''
     private ballColor=''
+    private play = ''
+    //nebula colors
+    private greenPFX = '#2EE866'
+    private bluePFX = '#002a4f'
+    private purplePFX = '#6c25be'
+    private redPFX = '#DE2222'
+    
     constructor(
         model: THREE.Group, 
         mixer: THREE.AnimationMixer,  
@@ -77,14 +84,15 @@ export class Player extends Model{
         const clickPressed =['left','middle','right'].some(key => mouseButtonsPressed[key] == true)
 
 
-        let play = ''
+        // let play = ''
+        this.play = ''
         if (directionPressed && this.toggleRun) {
-            play = 'walk'
+            this.play = 'walk'
         } else if (directionPressed) {
-            play = 'run.001' //walking
+            this.play = 'run.001' //walking
         } else if(clickPressed){
             if(mouseButtonsPressed.left==true){
-                play = '1H_attack' 
+                this.play = '1H_attack' 
                 if(this.lookingAt=='right'){
                     this.ballposition={x:1,y:3,z:1}
                     this.balldirection={x:1,y:0,z:0}
@@ -106,7 +114,7 @@ export class Player extends Model{
                 this.shootVelocity=10
             }
             if(mouseButtonsPressed.right==true){
-                play = '2H_attack' 
+                this.play = '2H_attack' 
 
                 if(this.lookingAt=='right'){
                     this.ballposition={x:2.5,y:3,z:1}
@@ -124,7 +132,7 @@ export class Player extends Model{
                     this.ballposition={x:-1,y:3,z:2.5}
                     this.balldirection={x:0,y:0,z:1}
                 }
-                this.ballColor='#6c25be'
+                this.ballColor='#2EE866'
                 this.ballScale=.5
                 this.shootVelocity=18
             }
@@ -145,22 +153,23 @@ export class Player extends Model{
                     this.ballposition={x:-1,y:6,z:2}
                     this.balldirection={x:0,y:-1,z:0}
                 }
-                this.ballScale=.2
-                play = 'AOE' 
+                this.ballScale=.8
+                this.ballColor=this.redPFX
+                this.play = 'AOE' 
                 this.shootVelocity=10
             }
             
             this.mixer.addEventListener( 'loop', this.boundCastAttack1)
         }else {
-            play = 'idle'
+            this.play = 'idle'
         }
-        if (this.currentAction != play) {
-            const toPlay= this.animationsMap.get(play)
+        if (this.currentAction != this.play) {
+            const toPlay= this.animationsMap.get(this.play)
             const current = this.animationsMap.get(this.currentAction)
 
             current?.fadeOut(this.fadeDuration)
             toPlay?.reset().fadeIn(this.fadeDuration).play()
-            this.currentAction = play
+            this.currentAction = this.play
         }
         this.mixer.update(delta)
         if (this.currentAction == 'run.001' || this.currentAction == 'walk') {
@@ -199,6 +208,16 @@ export class Player extends Model{
                 a.position.set(this.balls[i].position.x,this.balls[i].position.y,this.balls[i].position.z)
                 a.position.scale=.1
                 a.dead=false
+                //change color depending on attack
+                if(this.play == "1H_attack") {
+                    a.behaviours[1].colorA.colors = [this.bluePFX]
+                } else if (this.play == "2H_attack") {
+                    a.behaviours[1].colorA.colors = [this.greenPFX]
+                } else if (this.play == "AOE") {
+                    a.behaviours[1].colorA.colors = [this.purplePFX]
+                  //  a.behaviours[1].colorB.colors = [this.redPFX]
+                    
+                } 
             })
         }
     }

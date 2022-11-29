@@ -3,7 +3,7 @@ import * as CANNON from 'cannon-es'
 import {  GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import { Player } from './classes/Player'
 import { DragonPatron } from './classes/DragonPatron'
-// import CannonDebugRenderer from './utils/cannonDebugRenderer'
+import CannonDebugRenderer from './utils/cannonDebugRenderer'
 import getThreeApp, { scene } from "./classes/App"
 import { Mutant } from './classes/Mutant'
 // @ts-ignore
@@ -17,7 +17,7 @@ import { Water } from "./utils/Water2.js"
 const app = getThreeApp()
 
 // Cannon debugger
-// const cannonDebugRenderer = new CannonDebugRenderer(app.scene, app.world)
+const cannonDebugRenderer = new CannonDebugRenderer(app.scene, app.world)
 
 //Loading textures
 const textureLoader = new THREE.TextureLoader()
@@ -27,7 +27,7 @@ const loader = new GLTFLoader()
 
 let player : Player  
 let dragon : DragonPatron
-// let mutant : Mutant
+ let mutant : Mutant
 let skyboxMesh : THREE.Mesh
 let nebula : any
 const leavesMaterial : THREE.ShaderMaterial = shaderLeaves() //leaves
@@ -40,7 +40,7 @@ initPlane()
 initPlayer()
 initLight() 
 
-// initMutant()
+ initMutant()
 // initDragon() 
 initSky()
 
@@ -63,9 +63,9 @@ function animate() : void {
     dragon ? dragon.update(delta, player.getModel().position,player.getModel().rotation) : null
 
 
-    // mutant ?  mutant.update(delta,app.scene,player.getModel()) : null
+     mutant ?  mutant.update(delta,app.scene,app.camera,player.getModel()) : null
     
-    // cannonDebugRenderer.update()
+    cannonDebugRenderer.update()
 
     skyboxMesh ? skyboxMesh.position.copy( app.camera.position ):null
 
@@ -97,7 +97,7 @@ function animate() : void {
     }
 
     app.world.step(Math.min(delta, 0.1))
-    // cannonDebugRenderer.update()
+    cannonDebugRenderer.update()
     app.renderer.render(app.scene, app.camera)
     requestAnimationFrame(animate)
 }
@@ -114,7 +114,7 @@ function initPlayer() : void {
         gltfAnimations.filter(a=> a.name != 'Armature.001|mixamo.com|Layer0').forEach((a:THREE.AnimationClip)=>{
             animationMap.set(a.name,mixer.clipAction(a))
         })
-        const body = new CANNON.Body({ mass: 50, shape: new CANNON.Cylinder(1, 1, 4, 12)})
+        const body = new CANNON.Body({ mass: 0, shape: new CANNON.Cylinder(1, 1, 4, 12)})
         body.position.y = 3
         model.name = 'Warlock'
         model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
@@ -129,32 +129,32 @@ function initPlayer() : void {
 }
 
 
-//Mutant
-// function initMutant():void {
-//     loader.load('/models/mutant.glb',function (gltf) {
-//         const model = gltf.scene
-//         const gltfAnimations: THREE.AnimationClip[] = gltf.animations
-//         const mixer = new THREE.AnimationMixer(model)
-//         const animationMap: Map<string, THREE.AnimationAction> = new Map()
-//         gltfAnimations.forEach((a:THREE.AnimationClip)=>{
-//             animationMap.set(a.name,mixer.clipAction(a))
-//         })
-//         const shape =  new CANNON.Cylinder(2, 2, 9, 12)
-//         const body = new CANNON.Body({ mass: 100, shape: shape})
-//         body.position.y = 4
-//         body.position.x = 15
-//         model.name = 'Mutant'
-//         model.position.y= 0
-//         model.position.x= 15
-//         model.rotateY(-1)
-//         model.scale.set(5,5,5)
-//         model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
-//         app.scene.add(model)
-//         app.world.addBody(body)
-//         mutant = new Mutant(model,mixer,animationMap,'idle',body)
-//     }
-//     )
-// }
+Mutant
+function initMutant():void {
+    loader.load('/models/mutant.glb',function (gltf) {
+        const model = gltf.scene
+        const gltfAnimations: THREE.AnimationClip[] = gltf.animations
+        const mixer = new THREE.AnimationMixer(model)
+        const animationMap: Map<string, THREE.AnimationAction> = new Map()
+        gltfAnimations.forEach((a:THREE.AnimationClip)=>{
+            animationMap.set(a.name,mixer.clipAction(a))
+        })
+        const shape =  new CANNON.Cylinder(2, 2, 9, 12)
+        const body = new CANNON.Body({ mass: 0, shape: shape})
+        body.position.y = 5
+        body.position.x = 15
+        model.name = 'Mutant'
+        model.position.y= 0
+        model.position.x= 15
+        model.rotateY(-1)
+        model.scale.set(5,5,5)
+        model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
+        app.scene.add(model)
+        app.world.addBody(body)
+        mutant = new Mutant(model,mixer,animationMap,'idle',body)
+    }
+    )
+}
 // Skybox
 function initSky() : void {
     const ft = new THREE.TextureLoader().load("/skybox/bluecloud_ft.jpg");
