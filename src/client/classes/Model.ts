@@ -27,12 +27,13 @@ export class Model{
         this.animationsMap.forEach((value, key) => {if(key == currentAction) value.play()})
     }
 
-    protected updateAnimations(delta:number) : void {
+    public updateAnimations(delta:number, idle:string) : void {
+        this.play = idle
         if (this.currentAction != this.play) {
             const toPlay= this.animationsMap.get(this.play)
             const current = this.animationsMap.get(this.currentAction)
             current?.fadeOut(this.fadeDuration)
-            toPlay?.reset().fadeIn(this.fadeDuration).play().setLoop(THREE.LoopOnce,1)
+            toPlay?.reset().fadeIn(this.fadeDuration).play()
             this.currentAction = this.play
         }
         this.mixer.update(delta)
@@ -56,19 +57,19 @@ export class Model{
         this.isCollading = value
     }
 
-    protected lifeAction(damage:number) : void{
+    protected lifeAction(damage:number, die:string, walking:string) : void{
         const lifeBar = this.lifeBar
         if(this.isCollading){
             lifeBar.scale.sub(new THREE.Vector3(damage,0,0));
             lifeBar.scale.clampScalar(0,1);
             if (lifeBar.scale.x <= 0) {
-                this.play ="die"
+                this.play =die
             } else{
               //animate recoil to dmg
               //this.play='recoil'
             }
         } else {
-            this.play='idle'
+            this.play=walking
         } 
     }
 
