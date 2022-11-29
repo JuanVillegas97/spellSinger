@@ -1,16 +1,15 @@
 import * as THREE from 'three'
 import * as CANNON from 'cannon-es'
-import { Model } from './Model'
-
+import { Model, body } from './Model'
 
 enum colors {greenPFX = '#2EE866',bluePFX = "#002a4f",purplePFX = "#6c25be",redPFX = "#DE2222"}
 
 interface bullet { shape: THREE.Mesh, body:  CANNON.Body} 
 interface ball {
     direction:{x:number, y:number, z:number},
-    position : {x:number, y:number, z:number},
+    position :{x:number, y:number, z:number},
     scale :  number,
-    color :string,
+    color : string,
     speed : number
 }
 
@@ -23,7 +22,7 @@ export class Player extends Model{
     private play = ''
     private toggleRun: boolean = true
     public particles : any
-    public balls : CANNON.Body[]= []
+    public balls : CANNON.Body[] = []
     public ballMeshes : THREE.Mesh[] = []
     private ball : ball = {
     direction:{x:0, y:0, z:0},
@@ -38,9 +37,11 @@ export class Player extends Model{
         mixer: THREE.AnimationMixer,  
         animationsMap: Map<string, THREE.AnimationAction>,
         currentAction: string,
-        particles:any
+        particles:any,
+        body: body,
         ){
-        super(model,mixer,animationsMap,currentAction)
+        super(model,mixer,animationsMap,currentAction,body)
+
         this.particles=particles
     }
 
@@ -50,7 +51,7 @@ export class Player extends Model{
         const lookingAt = this.lookingAt
         const directionPressed = ['w','a','s','d'].some(key => keysPressed[key] == true)
         const clickPressed =['left','middle','right'].some(key => mouseButtonsPressed[key] == true)
-        
+
         if(keysPressed.d==true) this.lookingAt= 'right';
         if(keysPressed.a==true) this.lookingAt= 'left';
         if(keysPressed.s==true) this.lookingAt= 'down';
@@ -115,7 +116,12 @@ export class Player extends Model{
             if(keysPressed.s){model.position.z += velocity; model.rotation.y = 0}
             if(keysPressed.w){model.position.z -= velocity; model.rotation.y = 3}
         }
-        // this.model.position.set(this.body.position.x,this.body.position.y-2,this.body.position.z)//!CHECK THIS
+
+        const shape = this.body.shape
+        const skeleton = this.body.skeleton
+        shape.position.copy(model.position)
+        if(shape.geometry.boundingBox){skeleton.copy(shape.geometry.boundingBox).applyMatrix4(shape.matrixWorld)}
+
         this.mixer.removeEventListener('loop',this.boundAttack)
         this.updateBullets()
     }
@@ -174,8 +180,6 @@ export class Player extends Model{
             })
         }
     }
-    
-    
 }
 
 
