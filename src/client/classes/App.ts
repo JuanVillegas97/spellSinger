@@ -7,7 +7,7 @@ export let renderer : THREE.WebGLRenderer
 export let world : World
 export default () => {
     camera = new PerspectiveCamera(75,window.innerWidth / window.innerHeight,0.1,2000)
-    camera.position.set(0, 4, 15)
+    camera.position.set(0, 4, 17.5)
 
     scene = new Scene()
 

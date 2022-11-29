@@ -25,7 +25,9 @@ export class Player extends Model{
     public particles : any
     private balldirection = {x:0,y:0,z:0}
     private ballposition = {x:0,y:0,z:0}
-    private ballscale = 0;
+    private ballScale = 0;
+    private lookingAt=''
+    private ballColor=''
     constructor(
         model: THREE.Group, 
         mixer: THREE.AnimationMixer,  
@@ -41,11 +43,10 @@ export class Player extends Model{
 
 
     public shoot(){
-        const ballGeometry = new THREE.SphereGeometry(0.2)
+        const ballGeometry = new THREE.SphereGeometry(this.ballScale)
         const ballBody = new CANNON.Body({ mass: .0001 })
-        ballBody.addShape(new CANNON.Sphere(0.2))
-        const ballMesh = new THREE.Mesh(ballGeometry, new THREE.MeshLambertMaterial({ color: 0xdddddd }))
-    
+        ballBody.addShape(new CANNON.Sphere(this.ballScale))
+        const ballMesh = new THREE.Mesh(ballGeometry, new THREE.MeshLambertMaterial({ color: this.ballColor, opacity: .5, transparent:true}))
         ballMesh.castShadow = true
         ballMesh.receiveShadow = true
     
@@ -84,23 +85,69 @@ export class Player extends Model{
         } else if(clickPressed){
             if(mouseButtonsPressed.left==true){
                 play = '1H_attack' 
-                this.ballposition={x:0,y:3,z:1}
-                this.balldirection.y=0
+                if(this.lookingAt=='right'){
+                    this.ballposition={x:1,y:3,z:1}
+                    this.balldirection={x:1,y:0,z:0}
+                }
+                if(this.lookingAt=='left'){
+                    this.ballposition={x:-1,y:3,z:-2}
+                    this.balldirection={x:-1,y:0,z:0}
+                }
+                if(this.lookingAt=='up'){
+                    this.ballposition={x:1,y:3,z:-2}
+                    this.balldirection={x:0,y:0,z:-1}
+                }
+                if(this.lookingAt=='down'){
+                    this.ballposition={x:-1,y:3,z:2}
+                    this.balldirection={x:0,y:0,z:1}
+                }
+                this.ballColor='#061258'
+                this.ballScale=.2
                 this.shootVelocity=10
             }
             if(mouseButtonsPressed.right==true){
-                this.ballposition={x:0,y:3,z:1}
-                this.balldirection.y=0
-
                 play = '2H_attack' 
-                this.shootVelocity=20
+
+                if(this.lookingAt=='right'){
+                    this.ballposition={x:2.5,y:3,z:1}
+                    this.balldirection={x:1,y:0,z:0}
+                }
+                if(this.lookingAt=='left'){
+                    this.ballposition={x:-2.5,y:3,z:-2}
+                    this.balldirection={x:-1,y:0,z:0}
+                }
+                if(this.lookingAt=='up'){
+                    this.ballposition={x:1,y:3,z:-2.5}
+                    this.balldirection={x:0,y:0,z:-1}
+                }
+                if(this.lookingAt=='down'){
+                    this.ballposition={x:-1,y:3,z:2.5}
+                    this.balldirection={x:0,y:0,z:1}
+                }
+                this.ballColor='#6c25be'
+                this.ballScale=.5
+                this.shootVelocity=18
             }
             if(mouseButtonsPressed.middle==true){
-                this.ballposition={x:0,y:6,z:1}
-                this.balldirection.y=-1
-
+                if(this.lookingAt=='right'){
+                    this.ballposition={x:1,y:6,z:1}
+                    this.balldirection={x:1,y:-1,z:0}
+                }
+                if(this.lookingAt=='left'){
+                    this.ballposition={x:-1,y:6,z:-2}
+                    this.balldirection={x:-1,y:-1,z:0}
+                }
+                if(this.lookingAt=='up'){
+                    this.ballposition={x:1,y:6,z:-2}
+                    this.balldirection={x:0,y:-1,z:0}
+                }
+                if(this.lookingAt=='down'){
+                    this.ballposition={x:-1,y:6,z:2}
+                    this.balldirection={x:0,y:-1,z:0}
+                }
+                this.ballScale=.2
                 play = 'AOE' 
-                this.shootVelocity=5
+                this.shootVelocity=10
             }
             
             this.mixer.addEventListener( 'loop', this.boundCastAttack1)
@@ -119,31 +166,23 @@ export class Player extends Model{
         if (this.currentAction == 'run.001' || this.currentAction == 'walk') {
             const velocity = this.currentAction == 'run.001' ? this.runVelocity : this.walkVelocity
             if(keysPressed.d==true){
-                this.balldirection.x=1
-                this.balldirection.z=0
+                this.lookingAt='right'
                 this.body.position.x += velocity
                 this.model.rotation.y = 1.5
             }
             if(keysPressed.a==true){
-                this.balldirection.x=-1
-                this.balldirection.z=0
-
+                this.lookingAt='left'
                 this.body.position.x -= velocity
                 this.model.rotation.y = -1.5
 
             }
             if(keysPressed.s==true){
-                this.balldirection.z=1
-                this.balldirection.x=0
-
+                this.lookingAt='down'
                 this.body.position.z += velocity
                 this.model.rotation.y = 0
-
             }
             if(keysPressed.w==true){
-                this.balldirection.z=-1
-                this.balldirection.x=0
-
+                this.lookingAt='up'
                 this.body.position.z -= velocity
                 this.model.rotation.y = 3
             }

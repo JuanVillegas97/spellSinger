@@ -27,7 +27,9 @@ export class Model{
         })
         this.body = body
     }
-
+    public modelUpdate(delta:number) : void{
+        this.mixer.update(delta)
+    }
     public getModel(): THREE.Group{
         return this.model
     }
