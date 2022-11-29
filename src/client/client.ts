@@ -55,24 +55,24 @@ function animate() : void {
         app.world.removeBody(bodi)
     }
     const delta = clock.getDelta()
+
+
+
+
 	leavesMaterial.uniforms.time.value = clock.getElapsedTime()
     leavesMaterial.uniformsNeedUpdate = true
-
-
     nebula ? nebula.update() : null
     dragon ? dragon.update(delta, player.getModel().position,player.getModel().rotation) : null
-
-
-     mutant ?  mutant.update(delta,app.scene,app.camera,player.getModel()) : null
+    mutant ?  mutant.update(delta,app.scene,app.camera,player.getModel()) : null
     
     cannonDebugRenderer.update()
 
     skyboxMesh ? skyboxMesh.position.copy( app.camera.position ):null
 
     if(player){
+        player.update(delta,keysPressed,mouseButtonsPressed) 
         app.camera.position.x = player.getModel().position.x
         app.camera.lookAt(player.getModel().position)
-        player.update(delta,keysPressed,mouseButtonsPressed) 
 
         for (let index = 0; index < player.ballMeshes.length; index++) {
             
@@ -115,6 +115,7 @@ function initPlayer() : void {
             animationMap.set(a.name,mixer.clipAction(a))
         })
         const body = new CANNON.Body({ mass: 0, shape: new CANNON.Cylinder(1, 1, 4, 12)})
+        body.id=1
         body.position.y = 3
         model.name = 'Warlock'
         model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
@@ -125,6 +126,9 @@ function initPlayer() : void {
             player = new Player(model,mixer,animationMap,'idle',body,particle)
             nebula = particle.addRenderer(nebulaRenderer);
         })
+        let cube1BB = new THREE.Box3(new THREE.Vector3(),new THREE.Vector3())
+        cube1BB.setFromObject(model)
+        console.log(cube1BB)
     })
 }
 
@@ -140,14 +144,14 @@ function initMutant():void {
             animationMap.set(a.name,mixer.clipAction(a))
         })
         const shape =  new CANNON.Cylinder(2, 2, 9, 12)
-        const body = new CANNON.Body({ mass: 0, shape: shape})
+        const body = new CANNON.Body({ mass: 1, shape: shape})
         body.position.y = 5
         body.position.x = 15
         model.name = 'Mutant'
         model.position.y= 0
         model.position.x= 15
         model.rotateY(-1)
-        model.scale.set(5,5,5)
+        model.scale.set(4,4,4)
         model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
         app.scene.add(model)
         app.world.addBody(body)
@@ -396,12 +400,6 @@ document.addEventListener('keyup', (event) => {
     (keysPressed as any)[event.key.toLowerCase()] = false
 }, false)
 
-// window.addEventListener('mousedown',(e)=>{
-//     setTimeout(function() {
-//         console.log('hi')
-
-//       }, 500);
-// })
 
 //Mouse listener
 const mouseButtonsPressed ={ }
