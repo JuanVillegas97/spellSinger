@@ -1,5 +1,9 @@
+//!Cosas interesantes :
+    //!Esta es la clase padre de Player  y Slimes y de otras futuras implementaciones
+    //!La interfaz body sirve para las colisiones
+    //!Esta clase basicamente se encarga de las animaciones e informacion del modelo como pos, dir, etc
+    //!Hice un map() para utilizar las aniamciones mediante strings que son la llave para activar la animaciones
 import * as THREE from 'three'
-
 export interface body {shape: THREE.Mesh, skeleton: THREE.Box3}
 export class Model{
     protected readonly fadeDuration : number = .2

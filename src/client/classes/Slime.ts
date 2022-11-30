@@ -1,8 +1,11 @@
+//!Cosas interesantes :
+    //!Esta es la clase hija de Model
+    //!Dependiendo de la posicion del player es a donde va a mirar el slime
+    //!Es el unico elemento que tiene 3 'cuerpos': CANNON.body,THREE.MESH,body->mi implementacion
+
 import * as THREE from 'three'
 import * as CANNON from 'cannon-es'
-
 import { Model, body } from './Model'
-
 export class Slime extends Model{
    private speed : number = .03 
    private cannon: CANNON.Body

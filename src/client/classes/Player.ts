@@ -1,9 +1,13 @@
+//!Cosas interesantes :
+    //!Esta es la clase hija de Model
+    //!Utilizamos enum para constantes
+    //!Dependiendo de la posicion del player es a donde iba a estar su vector
+    //!Tiene un toggle de correr
+    //!Tiene un interfaz ball para la informacion de la bolla que esta siendo disparada
 import * as THREE from 'three'
 import * as CANNON from 'cannon-es'
 import { Model, body } from './Model'
-
 enum colors {greenPFX = '#2EE866',bluePFX = "#002a4f",purplePFX = "#6c25be",redPFX = "#DE2222"}
-
 interface bullet { shape: THREE.Mesh, body:  CANNON.Body} 
 interface ball {
     direction:{x:number, y:number, z:number},
