@@ -1,3 +1,14 @@
+//!Cosas interesantes :
+    //!Hay dos tipos de colisiones una es colision por meshes y otra es por cannon, 
+    //!una fue implementada manualmente y otra de la API
+    //!Utilizamos shaders para el pasto ->shaderLeaves
+    //!Utilizamos libreria Nebula para las particulas
+    //!Utilizamos CANNON solamente para la colisionde las balas
+    //!Utilizamos diferentes modelos y animaciones
+    //!Utilizamos sangre, sudor y lagrimas para este codigo!
+    //!El array de enemgios se esta actualizando dinamicamente
+    //!Las pelotas desaparecen al colisionar
+
 // @ts-ignore
 import Nebula, { SpriteRenderer } from 'three-nebula'
 // @ts-ignore
@@ -11,30 +22,24 @@ import getThreeApp from "./classes/App"
 import { Player } from './classes/Player'
 import { Slime } from './classes/Slime'
 import { body, Model } from './classes/Model'
-// import { DragonPatron } from './classes/DragonPatron'
-
 
 // Scene, camera, renderer, world
 const app = getThreeApp()
-
 const leavesMaterial : THREE.ShaderMaterial = shaderLeaves()
-
 let dead       : boolean = false
+let dragon     : Model
 let monster    : Model
 let mushroom   : Model
 let player     : Player  
 let slimes     : Slime[] 
 let skyboxMesh : THREE.Mesh
 let nebula     : any
-// let dragon : DragonPatron
-// initDragon() 
+
+
 initPlayer()
 initLight() 
 // initLevel_1() 
 initLevel_2() 
-
-
-
 
 let removeBody:any;
 let bodi: any
@@ -46,8 +51,8 @@ function animate() : void {
         app.world.removeBody(bodi)
     }
     const delta = clock.getDelta()
-    // dragon ? dragon.update(delta, player.getModel().position,player.getModel().rotation) : null
-    if(monster)        monster.updateAnimations(delta,'idle');
+    if(dragon)          dragon.updateAnimations(delta,'Flying');
+    if(monster)         monster.updateAnimations(delta,'idle');
     if(mushroom)        mushroom.updateAnimations(delta,'No.003');
     if(nebula)          nebula.update()       
     if(skyboxMesh)      skyboxMesh.position.copy( app.camera.position )
@@ -56,17 +61,16 @@ function animate() : void {
             if(player && slime){
                 player.setCollading(player.checkCollision(slime.getSkeleton(),player.getSkeleton()))
                 slime.update(delta,app.camera,player.getModel())
+                if(slime.getLifeBar()<0){//!TODO FINAL DEAD
+                    
+                }
             }
-        });
+        })
     }
     
     if(player){
-        if(player.getLifeBar()<0){
-            dead=true
-        }else{
-            dead=false
+        if(player.getLifeBar()<0){//!TODO FINAL DEAD
         }
-
         player.update(delta,keysPressed,mouseButtonsPressed,app.camera) 
         app.camera.position.x = player.getModel().position.x
         app.camera.lookAt(player.getModel().position)
@@ -431,6 +435,23 @@ function initLevel_1() : void {
         app.scene.add(model)
         const body : body = {shape: new THREE.Mesh, skeleton: new THREE.Box3}
         mushroom = new Model(model,mixer,animationMap,'idle',body)
+    })
+    //!DRAGON
+    loader.load('/models/characters/bigboie.glb',function (gltf) {
+        const model = gltf.scene
+        const gltfAnimations: THREE.AnimationClip[] = gltf.animations
+        const mixer = new THREE.AnimationMixer(model)
+        const animationMap: Map<string, THREE.AnimationAction> = new Map()
+        gltfAnimations.forEach((a:THREE.AnimationClip)=>{
+            animationMap.set(a.name,mixer.clipAction(a))
+        })
+        model.scale.set(12,12,12)
+        model.position.set(-30,-18,-40)
+        model.rotateY(.5)
+        model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
+        app.scene.add(model)
+        const body : body = {shape: new THREE.Mesh, skeleton: new THREE.Box3}
+        dragon = new Model(model,mixer,animationMap,'Flying',body)
     })
     //!BLACKSMITH
     loader.load('/models/village/Blacksmith_BlueTeam.glb',function (gltf) {

@@ -1,6 +1,8 @@
+//!Cosas interesantes :
+    //!Este archivo simplemente es para ordenar el codigo
+    //!Envia un objeto con las cosas esenciales!
 import { Scene, PerspectiveCamera, WebGLRenderer, Color } from 'three';
 import { World } from 'cannon-es'
-
 export let scene : THREE.Scene
 export let camera : THREE.PerspectiveCamera
 export let renderer : THREE.WebGLRenderer
