@@ -73,6 +73,10 @@ export class Model{
         } 
     }
 
+    public getLifeBar(): number{
+        return this.lifeBar.scale.x
+    }
+    
     public getPlay(): string{
         return this.play
     }

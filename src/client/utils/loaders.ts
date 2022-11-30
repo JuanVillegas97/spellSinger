@@ -1,8 +1,6 @@
 import {  GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import { TextureLoader } from 'three'
-
-//Loading textures
+import { FontLoader } from 'three/examples/jsm/loaders/FontLoader'
 export const textureLoader = new TextureLoader()
-
-//GLTF Loader
+export const fontLoader = new FontLoader()
 export const loader = new GLTFLoader()

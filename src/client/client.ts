@@ -6,7 +6,7 @@ import json from "./particles/blue.json"
 import { Water } from "./utils/Water2.js"
 import * as THREE from 'three'
 import * as CANNON from 'cannon-es'
-import {textureLoader, loader} from './utils/loaders'
+import {textureLoader, loader, fontLoader} from './utils/loaders'
 import getThreeApp from "./classes/App"
 import { Player } from './classes/Player'
 import { Slime } from './classes/Slime'
@@ -19,26 +19,23 @@ const app = getThreeApp()
 
 const leavesMaterial : THREE.ShaderMaterial = shaderLeaves()
 
+let dead       : boolean = false
+let monster    : Model
 let mushroom   : Model
 let player     : Player  
-let slime      : Slime
+let slimes     : Slime[] 
 let skyboxMesh : THREE.Mesh
 let nebula     : any
 // let dragon : DragonPatron
-
-
 // initDragon() 
-
-initLevel_1() 
 initPlayer()
 initLight() 
-// initSlime()
+initLevel_1() 
+// initLevel_2() 
 
-// function checkCollision(){
-//     if(cube2BB.intersectsBox(cube1BB)||cube2BB.containsBox(cube1BB)){
-//         console.log('INTERSECTS')
-//     }
-// }
+
+
+
 let removeBody:any;
 let bodi: any
 let meshi: any
@@ -52,17 +49,27 @@ function animate() : void {
     // dragon ? dragon.update(delta, player.getModel().position,player.getModel().rotation) : null
     if(mushroom)        mushroom.updateAnimations(delta,'No.003');
     if(nebula)          nebula.update()       
-    if(skyboxMesh)      skyboxMesh.position.copy( app.camera.position )   
-    if(player && slime){
-    player.setCollading(player.checkCollision(slime.getSkeleton(),player.getSkeleton()))
-    slime.update(delta,app.camera,player.getModel())
+    if(skyboxMesh)      skyboxMesh.position.copy( app.camera.position )
+    if(slimes){
+        slimes.forEach(slime => {
+            if(player && slime){
+                player.setCollading(player.checkCollision(slime.getSkeleton(),player.getSkeleton()))
+                slime.update(delta,app.camera,player.getModel())
+            }
+        });
     }
+    
     if(player){
+        if(player.getLifeBar()<0){
+            dead=true
+        }else{
+            dead=false
+        }
+
         player.update(delta,keysPressed,mouseButtonsPressed,app.camera) 
         app.camera.position.x = player.getModel().position.x
         app.camera.lookAt(player.getModel().position)
         for (let index = 0; index < player.ballMeshes.length; index++) {
-            
             let body = player.balls[index]
             let mesh = player.ballMeshes[index]
             body.addEventListener("collide",(e:any)=>{
@@ -71,21 +78,26 @@ function animate() : void {
                 meshi=mesh
                 player.ballMeshes.splice(index,1)
                 player.balls.splice(index,1)
-                if(e.body.id==20){
-                    setTimeout(() => { 
-                    slime.setCollading(false) 
-                    }, 100)  
-                    if(player.getPlay()=='1H_attack'){
-                        slime.setDamage(0.010)
-                    }
-                    if(player.getPlay()=='2H_attack'){
-                        slime.setDamage(0.025)
-                    }
-                    if(player.getPlay()=='AOE'){
-                        slime.setDamage(0.050)
-                    }
-                    slime.setCollading(true) 
+                if(slimes){
+                    slimes.forEach(slime => {
+                        if(e.body.id==20){
+                            setTimeout(() => { 
+                            slime.setCollading(false) 
+                            }, 100)  
+                            if(player.getPlay()=='1H_attack'){
+                                slime.setDamage(0.010)
+                            }
+                            if(player.getPlay()=='2H_attack'){
+                                slime.setDamage(0.025)
+                            }
+                            if(player.getPlay()=='AOE'){
+                                slime.setDamage(0.050)
+                            }
+                            slime.setCollading(true) 
+                        }
+                    })
                 }
+                
             })
             app.world.addBody(body)
             app.scene.add(mesh)
@@ -128,8 +140,8 @@ function initPlayer() : void {
     })
 }
 
-function initSlime():void {
-    loader.load('/models/slime.glb',function (gltf) {
+function initSlime(x:number,z:number):void {
+    loader.load('/models/characters/slime.glb',function (gltf) {
         const model = gltf.scene
         const gltfAnimations: THREE.AnimationClip[] = gltf.animations
         const mixer = new THREE.AnimationMixer(model)
@@ -140,33 +152,24 @@ function initSlime():void {
         const shape = new THREE.Mesh(new THREE.BoxGeometry(3,5,1),new THREE.MeshPhongMaterial({color:0Xff0000}))
         const skeleton = new THREE.Box3(new THREE.Vector3(),new THREE.Vector3())
         const body : body = {shape: shape, skeleton: skeleton}
-        
         const cannon =  new CANNON.Body({ mass: 25, shape: new CANNON.Cylinder(2, 2, 4, 12)})
-
-
-        shape.visible=true//? CHECK THIS FOR LATER
+        shape.visible=false//? CHECK THIS FOR LATER
         skeleton.setFromObject(shape)
-        cannon.position.y = 4
-        cannon.position.x = 15
         cannon.id=20
         model.name = 'slime'
         model.rotateY(-1)
         model.scale.set(4,4,4)
+        cannon.position.set(x,4,z)
         model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
         app.scene.add(shape)
         app.scene.add(model)
         app.world.addBody(cannon)
-        slime = new Slime(model,mixer,animationMap,'idle',body, cannon)
+        slimes.push(new Slime(model,mixer,animationMap,'idle',body, cannon))
     })
 }
 
 function initLevel_2() : void {
-    // const ft = new THREE.TextureLoader().load("textures/skysnow/winterskyFRONT.png");
-    // const bk = new THREE.TextureLoader().load("textures/skysnow/winterskyBACK.png");
-    // const up = new THREE.TextureLoader().load("textures/skysnow/winterskyTOP.png");
-    // const dn = new THREE.TextureLoader().load("textures/skysnow/winterskyBOTTOM.png");
-    // const rt = new THREE.TextureLoader().load("textures/skysnow/winterskyRIGHT.png");
-    // const lf = new THREE.TextureLoader().load("textures/skysnow/winterskyLEFT.png")
+    
 }
 
 function initLevel_1() : void {
@@ -175,13 +178,13 @@ function initLevel_1() : void {
         theta = (theta-90) * Math.PI/180;
         return {x: r*Math.cos(theta),y: -r*Math.sin(theta)}
     }
-    for (var theta=0; theta<=360; theta += 10) {
-        const  answer = circleXY(5, theta);
+    slimes = new Array(2)
+    for (let theta=0; theta<360; theta += 90) {
+        const  answer = circleXY(40, theta)
         const x=answer.x
         const z=answer.y
         const ball = new THREE.Mesh(new THREE.SphereGeometry(.2), new THREE.MeshLambertMaterial({ color: 'white'}))
-        ball.position.set(x,1,z)
-        app.scene.add(ball)
+        initSlime(x,z)
     }
     //!SKYBOX
     const ft = new THREE.TextureLoader().load("textures/skybox/bluecloud_ft.jpg");
@@ -434,7 +437,6 @@ function shaderLeaves(){
 `;
     const fragmentShader = `
     varying vec2 vUv;
-    
     void main() {
         vec3 baseColor = vec3( 0.41, 1.0, 0.5 );
         float clarity = ( vUv.y * 0.875 ) + 0.125;

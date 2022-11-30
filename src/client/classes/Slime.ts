@@ -22,10 +22,9 @@ export class Slime extends Model{
    }
 
    public update(delta:number,camera:THREE.PerspectiveCamera, playerModel:THREE.Group) : void{
-      console.log(this.play)
       this.lifeBar.lookAt(camera.position)
-      this.updateAnimations(delta,'No.003')
-      this.lifeAction(this.incomeDamage,'SLIME_DEAD','SLIME_WALK')
+      this.updateAnimations(delta,'Slime_WALK')
+      this.lifeAction(this.incomeDamage,'Slime_DEAD','Slime_WALK')
       this.gettingCloser(playerModel)
       const shape = this.body.shape
       const skeleton = this.body.skeleton
