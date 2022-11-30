@@ -12,11 +12,49 @@ import { Player } from './classes/Player'
 import { Slime } from './classes/Slime'
 import { body, Model } from './classes/Model'
 // import { DragonPatron } from './classes/DragonPatron'
+//SNOW
+// @ts-ignore
+import ParticleSystem, {Body,   BoxZone,CrossZone,Emitter,Gravity,Life,Mass,Position,RadialVelocity,Radius,RandomDrift,Rate,Rotate,ScreenZone,Span,SpriteRenderer,Vector3D, } from 'three-nebula';
 
 
 // Scene, camera, renderer, world
 const app = getThreeApp()
+const createSnow = () => {
+    let map = new THREE.TextureLoader().load("../particles/snow/snow.png");
+    let material = new THREE.SpriteMaterial({
+      map: map,
+      transparent: true,
+      opacity: 0.5,
+      color: 0xffffff,
+    });
+    return new THREE.Sprite(material);
+  };
 
+  const createEmitter = (camera:THREE.Camera, renderer:any) => {
+    const emitter = new Emitter();
+    const position = new Position();
+  
+    position.addZone(new BoxZone(2500, 10, 2500));
+  
+    return emitter
+      .setRate(new Rate(new Span(34, 48), new Span(0.2, 0.5)))
+      .addInitializers([
+        new Mass(1),
+        new Radius(new Span(10, 20)),
+        position,
+        new Life(5, 10),
+        new Body(createSnow()),
+        new RadialVelocity(0, new Vector3D(0, -1, 0), 90),
+      ])
+      .addBehaviours([
+        new RandomDrift(10, 1, 10, 0.05),
+        new Rotate('random', 'random'),
+        new Gravity(2),
+        new CrossZone(new ScreenZone(camera, renderer, 20, '234'), 'dead'),
+      ])
+      .setPosition({ y: 800 })
+      .emit();
+  };
 const leavesMaterial : THREE.ShaderMaterial = shaderLeaves()
 
 let dead       : boolean = false
@@ -132,11 +170,14 @@ function initPlayer() : void {
         model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
         app.scene.add(shape)
         app.scene.add(model)
+        const system = new ParticleSystem().addEmitter(createEmitter(app.camera, app.renderer)).addRenderer(new SpriteRenderer(app.scene, THREE));
+        
         Nebula.fromJSONAsync(json, THREE).then((particle:any) => {
             const nebulaRenderer = new SpriteRenderer(app.scene, THREE)
             player = new Player(model,mixer,animationMap,'idle',particle,body)
             nebula = particle.addRenderer(nebulaRenderer)
         })
+
     })
 }
 
@@ -525,3 +566,7 @@ window.addEventListener('contextmenu',(e)=>{
     e.preventDefault();
     
 })
+
+
+
+  const system = new ParticleSystem() .addEmitter(createEmitter(app.camera, app.renderer)).addRenderer(new SpriteRenderer(app.scene, THREE));
