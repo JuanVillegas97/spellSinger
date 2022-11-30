@@ -10,7 +10,6 @@ export default () => {
     camera.position.set(0, 4, 17.5)
 
     scene = new Scene()
-
     
     renderer = new WebGLRenderer({ antialias: true })
     renderer.setSize(window.innerWidth, window.innerHeight)

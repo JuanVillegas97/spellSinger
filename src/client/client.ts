@@ -6,60 +6,35 @@ import json from "./particles/blue.json"
 import { Water } from "./utils/Water2.js"
 import * as THREE from 'three'
 import * as CANNON from 'cannon-es'
-import CannonDebugRenderer from './utils/cannonDebugRenderer'
+import {textureLoader, loader, fontLoader} from './utils/loaders'
 import getThreeApp from "./classes/App"
-import {  GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import { Player } from './classes/Player'
-import { Mutant } from './classes/Mutant'
-import { body } from './classes/Model'
+import { Slime } from './classes/Slime'
+import { body, Model } from './classes/Model'
 // import { DragonPatron } from './classes/DragonPatron'
+
 
 // Scene, camera, renderer, world
 const app = getThreeApp()
 
-// Cannon debugger
-const cannonDebugRenderer = new CannonDebugRenderer(app.scene, app.world)
+const leavesMaterial : THREE.ShaderMaterial = shaderLeaves()
 
-//Loading textures
-const textureLoader = new THREE.TextureLoader()
-
-//GLTF Loader
-const loader = new GLTFLoader()
-
-let player : Player  
-// let dragon : DragonPatron
-let mutant : Mutant
+let dead       : boolean = false
+let monster    : Model
+let mushroom   : Model
+let player     : Player  
+let slimes     : Slime[] 
 let skyboxMesh : THREE.Mesh
-let nebula : any
-const leavesMaterial : THREE.ShaderMaterial = shaderLeaves() //leaves
-
-
-
-
-const cube2 = new THREE.Mesh(
-    new THREE.BoxGeometry(2,8,1),
-    new THREE.MeshPhongMaterial({color:0Xff0000})
-)
-cube2.position.set(0,0,10)
-let cube2BB = new THREE.Box3(new THREE.Vector3(),new THREE.Vector3())
-cube2BB.setFromObject(cube2)
-app.scene.add(cube2)
-
-
-// initLeaves()
-initPlane() 
+let nebula     : any
+// let dragon : DragonPatron
+// initDragon() 
 initPlayer()
 initLight() 
+initLevel_1() 
+// initLevel_2() 
 
-initMutant()
-// initDragon() 
-initSky()
 
-// function checkCollision(){
-//     if(cube2BB.intersectsBox(cube1BB)||cube2BB.containsBox(cube1BB)){
-//         console.log('INTERSECTS')
-//     }
-// }
+
 
 let removeBody:any;
 let bodi: any
@@ -71,27 +46,30 @@ function animate() : void {
         app.world.removeBody(bodi)
     }
     const delta = clock.getDelta()
-
-
-    // checkCollision()
-
-	leavesMaterial.uniforms.time.value = clock.getElapsedTime()
-    leavesMaterial.uniformsNeedUpdate = true
-    nebula ? nebula.update() : null
     // dragon ? dragon.update(delta, player.getModel().position,player.getModel().rotation) : null
-    mutant ?  mutant.update(delta,app.camera,player.getModel()) : null
+    if(mushroom)        mushroom.updateAnimations(delta,'No.003');
+    if(nebula)          nebula.update()       
+    if(skyboxMesh)      skyboxMesh.position.copy( app.camera.position )
+    if(slimes){
+        slimes.forEach(slime => {
+            if(player && slime){
+                player.setCollading(player.checkCollision(slime.getSkeleton(),player.getSkeleton()))
+                slime.update(delta,app.camera,player.getModel())
+            }
+        });
+    }
     
-
-    skyboxMesh ? skyboxMesh.position.copy( app.camera.position ):null
-
     if(player){
-        console.log(player.checkCollision(cube2BB,player.getSkeleton()))
-        player.update(delta,keysPressed,mouseButtonsPressed) 
+        if(player.getLifeBar()<0){
+            dead=true
+        }else{
+            dead=false
+        }
+
+        player.update(delta,keysPressed,mouseButtonsPressed,app.camera) 
         app.camera.position.x = player.getModel().position.x
         app.camera.lookAt(player.getModel().position)
-
         for (let index = 0; index < player.ballMeshes.length; index++) {
-            
             let body = player.balls[index]
             let mesh = player.ballMeshes[index]
             body.addEventListener("collide",(e:any)=>{
@@ -100,29 +78,44 @@ function animate() : void {
                 meshi=mesh
                 player.ballMeshes.splice(index,1)
                 player.balls.splice(index,1)
-                // setTimeout(() => { //! CHECK THIS
-                //     player.particles.emitters.forEach((a:any) => {
-                //         a.dead=true
-                //     })
-                // }, 1000)  
+                if(slimes){
+                    slimes.forEach(slime => {
+                        if(e.body.id==20){
+                            setTimeout(() => { 
+                            slime.setCollading(false) 
+                            }, 100)  
+                            if(player.getPlay()=='1H_attack'){
+                                slime.setDamage(0.010)
+                            }
+                            if(player.getPlay()=='2H_attack'){
+                                slime.setDamage(0.025)
+                            }
+                            if(player.getPlay()=='AOE'){
+                                slime.setDamage(0.050)
+                            }
+                            slime.setCollading(true) 
+                        }
+                    })
+                }
+                
             })
             app.world.addBody(body)
             app.scene.add(mesh)
         }
-
     }
+	leavesMaterial.uniforms.time.value = clock.getElapsedTime()
+    leavesMaterial.uniformsNeedUpdate = true
 
     app.world.step(Math.min(delta, 0.1))
-    // cannonDebugRenderer.update()
     app.renderer.render(app.scene, app.camera)
     requestAnimationFrame(animate)
 }
 animate()
-    
+
 //Things forgotten by the hand of god
-// Player
+
 function initPlayer() : void {
-    loader.load('/models/warlock.glb',function (gltf) {
+    loader.load('/models/characters/warlock.glb',function (gltf) {
         const model = gltf.scene
         const gltfAnimations: THREE.AnimationClip[] = gltf.animations
         const mixer = new THREE.AnimationMixer(model)
@@ -133,7 +126,7 @@ function initPlayer() : void {
         gltfAnimations.filter(a=> a.name != 'Armature.001|mixamo.com|Layer0').forEach((a:THREE.AnimationClip)=>{
             animationMap.set(a.name,mixer.clipAction(a))
         })
-        shape.visible=true//? CHECK THIS FOR LATER
+        shape.visible=false
         skeleton.setFromObject(shape)
         model.name = 'Warlock'
         model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
@@ -147,44 +140,60 @@ function initPlayer() : void {
     })
 }
 
-
-Mutant
-function initMutant():void {
-    loader.load('/models/mutant.glb',function (gltf) {
+function initSlime(x:number,z:number):void {
+    loader.load('/models/characters/slime.glb',function (gltf) {
         const model = gltf.scene
         const gltfAnimations: THREE.AnimationClip[] = gltf.animations
         const mixer = new THREE.AnimationMixer(model)
         const animationMap: Map<string, THREE.AnimationAction> = new Map()
-        gltfAnimations.forEach((a:THREE.AnimationClip)=>{
+        gltfAnimations.filter(a=> a.name != 'Slime_IDLE').forEach((a:THREE.AnimationClip)=>{
             animationMap.set(a.name,mixer.clipAction(a))
         })
-        const shape = new THREE.Mesh(new THREE.BoxGeometry(2,8,1),new THREE.MeshPhongMaterial({color:0Xff0000}))
+        const shape = new THREE.Mesh(new THREE.BoxGeometry(3,5,1),new THREE.MeshPhongMaterial({color:0Xff0000}))
         const skeleton = new THREE.Box3(new THREE.Vector3(),new THREE.Vector3())
         const body : body = {shape: shape, skeleton: skeleton}
-
-
-        shape.visible=true//? CHECK THIS FOR LATER
+        const cannon =  new CANNON.Body({ mass: 25, shape: new CANNON.Cylinder(2, 2, 4, 12)})
+        shape.visible=false//? CHECK THIS FOR LATER
         skeleton.setFromObject(shape)
-        model.name = 'Mutant'
-        model.position.y= 0
-        model.position.x= 15
+        cannon.id=20
+        model.name = 'slime'
         model.rotateY(-1)
         model.scale.set(4,4,4)
+        cannon.position.set(x,4,z)
         model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
         app.scene.add(shape)
         app.scene.add(model)
-        mutant = new Mutant(model,mixer,animationMap,'idle',body)
+        app.world.addBody(cannon)
+        slimes.push(new Slime(model,mixer,animationMap,'idle',body, cannon))
     })
 }
 
-// Skybox
-function initSky() : void {
-    const ft = new THREE.TextureLoader().load("/skybox/bluecloud_ft.jpg");
-    const bk = new THREE.TextureLoader().load("/skybox/bluecloud_bk.jpg");
-    const up = new THREE.TextureLoader().load("/skybox/bluecloud_up.jpg");
-    const dn = new THREE.TextureLoader().load("/skybox/bluecloud_dn.jpg");
-    const rt = new THREE.TextureLoader().load("/skybox/bluecloud_rt.jpg");
-    const lf = new THREE.TextureLoader().load("/skybox/bluecloud_lf.jpg")
+function initLevel_2() : void {
+    
+}
+
+function initLevel_1() : void {
+    //!init enemies
+    function circleXY(r:number, theta:number) {
+        theta = (theta-90) * Math.PI/180;
+        return {x: r*Math.cos(theta),y: -r*Math.sin(theta)}
+    }
+    slimes = new Array(2)
+    for (let theta=0; theta<360; theta += 90) {
+        const  answer = circleXY(40, theta)
+        const x=answer.x
+        const z=answer.y
+        const ball = new THREE.Mesh(new THREE.SphereGeometry(.2), new THREE.MeshLambertMaterial({ color: 'white'}))
+        initSlime(x,z)
+    }
+    //!SKYBOX
+    const ft = new THREE.TextureLoader().load("textures/skybox/bluecloud_ft.jpg");
+    const bk = new THREE.TextureLoader().load("textures/skybox/bluecloud_bk.jpg");
+    const up = new THREE.TextureLoader().load("textures/skybox/bluecloud_up.jpg");
+    const dn = new THREE.TextureLoader().load("textures/skybox/bluecloud_dn.jpg");
+    const rt = new THREE.TextureLoader().load("textures/skybox/bluecloud_rt.jpg");
+    const lf = new THREE.TextureLoader().load("textures/skybox/bluecloud_lf.jpg")
+
     const skyboxGeo = new THREE.BoxGeometry(2000,2000,2000);
     const skyboxMaterials =[
     new THREE.MeshBasicMaterial( { map: ft, side: THREE.BackSide } ),
@@ -193,12 +202,9 @@ function initSky() : void {
     new THREE.MeshBasicMaterial( { map: dn, side: THREE.BackSide } ),
     new THREE.MeshBasicMaterial( { map: rt, side: THREE.BackSide } ),
     new THREE.MeshBasicMaterial( { map: lf, side: THREE.BackSide } ),]
-
     skyboxMesh = new THREE.Mesh( skyboxGeo, skyboxMaterials );
     app.scene.add(skyboxMesh);
-}
-// Plane
-function initPlane() : void {
+    //!GRASS
     const dummy = new THREE.Object3D();
     const geometry = new THREE.PlaneGeometry( 0.1, 1, 1, 4 );
     geometry.translate( 0, 0.5, 0 ); 
@@ -206,23 +212,21 @@ function initPlane() : void {
     app.scene.add( instancedMesh );
     for ( let i=0 ; i<5000 ; i++ ) {
         dummy.position.set(
-        ( Math.random() - 0.5 ) * 10,
+        ( Math.random() - 2.5 ) * 19,
         0,
-        ( Math.random() - 0.5 ) * 10
+        ( Math.random() - .5 ) * 40
     );
-
     dummy.scale.setScalar( 0.5 + Math.random() * 0.5 );
     dummy.rotation.y = Math.random() * Math.PI;
     dummy.updateMatrix();
     instancedMesh.setMatrixAt( i, dummy.matrix );
     }
-
+    //!PLANE
     const soilBaseColor = textureLoader.load("./textures/soil/Rock_Moss_001_basecolor.jpg");
     const soilNormalMap = textureLoader.load("./textures/soil/Rock_Moss_001_normal.jpg");
     const soilHeightMap = textureLoader.load("./textures/soil/Rock_Moss_001_height.png");
     const soilRoughness = textureLoader.load("./textures/soil/Rock_Moss_001_roughness.jpg");
     const soilAmbientOcclusion = textureLoader.load("./textures/soil/Rock_Moss_001_ambientOcclusion.jpg");
-
     const geometrySoil = new THREE.PlaneGeometry(100, 50,200,200)
     const planeSoil = new THREE.Mesh(geometrySoil, new THREE.MeshStandardMaterial({
         map: soilBaseColor,
@@ -234,7 +238,6 @@ function initPlane() : void {
         // opacity: 1,
         // transparent:true
     }));
-
     planeSoil.rotateX(-Math.PI / 2) 
     planeSoil.receiveShadow = true;
     planeSoil.receiveShadow = true
@@ -242,19 +245,73 @@ function initPlane() : void {
     app.scene.add(planeSoil)
     const planeShape = new CANNON.Plane()
     const planeBody = new CANNON.Body({ mass: 0, shape: planeShape})
-
+    planeBody.id=5
     planeBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2)
     app.world.addBody(planeBody)
-    // loader.load('/models/village/BlackSmithShop.glb',function (gltf) {
-    //     const model = gltf.scene
-    //     model.position.set(0,3,-20)
+    //!VILLAGE
+    //!Mushroom
+    loader.load('/models/characters/mushroomMan.glb',function (gltf) {
+        const model = gltf.scene
+        const gltfAnimations: THREE.AnimationClip[] = gltf.animations
+        const mixer = new THREE.AnimationMixer(model)
+        const animationMap: Map<string, THREE.AnimationAction> = new Map()
+        gltfAnimations.filter(a=> a.name != 'Idle.018').forEach((a:THREE.AnimationClip)=>{
+            animationMap.set(a.name,mixer.clipAction(a))
+        })
+        model.scale.set(.2,.2,.2)
+        model.position.set(-35,.5,10)
+        model.rotateY(.8)
+        model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
+        app.scene.add(model)
+        const body : body = {shape: new THREE.Mesh, skeleton: new THREE.Box3}
+        mushroom = new Model(model,mixer,animationMap,'idle',body)
+    })
+    //!BLACKSMITH
+    loader.load('/models/village/Blacksmith_BlueTeam.glb',function (gltf) {
+        const model = gltf.scene
+        model.position.set(-35,5,-5)
+        model.rotateY(1.55)
 
-    //     model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
-    //     app.scene.add(model)
-    // })
+        model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
+        app.scene.add(model)
+    })
+    //!BLACKSMITH
+    loader.load('/models/village/Blacksmith_BlueTeam.glb',function (gltf) {
+        const model = gltf.scene
+        model.position.set(-35,5,-5)
+        model.rotateY(1.55)
 
-    
+        model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
+        app.scene.add(model)
+    })
+    //!HOUSE
+    loader.load('/models/village/House_Level1_BlueTeam.glb',function (gltf) {
+        const model = gltf.scene
+        model.position.set(35,5,-15)
+        model.rotateY(-2.55)
 
+        model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
+        app.scene.add(model)
+    })
+    //!mARKET
+    loader.load('/models/village/Market_BlueTeam.glb',function (gltf) {
+        const model = gltf.scene
+        model.position.set(34,2,-4)
+        model.rotateY(-1.8)
+
+        model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
+        app.scene.add(model)
+    })
+    //!HOUSE_2
+    loader.load('/models/village/House_Level1_BlueTeam.glb',function (gltf) {
+        const model = gltf.scene
+        model.position.set(37,5,13)
+        model.rotateY(-1.6)
+        model.scale.x=1.5
+        model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
+        app.scene.add(model)
+    })
+    //!GATE
     loader.load('/models/village/Gate_Level1_BlueTeam.glb',function (gltf) {
         const model = gltf.scene
         model.position.set(0,7.6,-30)
@@ -263,7 +320,7 @@ function initPlane() : void {
         model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
         app.scene.add(model)
     })
-    
+    //!Walls
     let wallsX:number = -25.5
     for (let i = 0; i < 2; i++) {
         loader.load('/models/village/Wall_Level1_BlueTeam.glb',function (gltf) {
@@ -277,6 +334,33 @@ function initPlane() : void {
             wallsX+=51.5;
         })
     }
+    let wallsXleft:number = -28.5
+    for (let i = 0; i < 3; i++) {
+        loader.load('/models/village/Wall_Level1_BlueTeam.glb',function (gltf) {
+            let model = gltf.scene
+            model.rotateY(0)
+            model.scale.y=2
+
+            model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
+            model.position.set(-55,5,wallsXleft)
+            app.scene.add(model)
+            wallsXleft+=15.5;
+        })
+    }
+    let wallsXright:number = -28.5
+    for (let i = 0; i < 3; i++) {
+        loader.load('/models/village/Wall_Level1_BlueTeam.glb',function (gltf) {
+            let model = gltf.scene
+            model.rotateY(0)
+            model.scale.y=2
+
+            model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
+            model.position.set(55,5,wallsXright)
+            app.scene.add(model)
+            wallsXright+=15.5;
+        })
+    }
+
     let towerX :number= -39.9
     for (let i = 0; i < 2; i++) {
         loader.load('/models/village/ArcherTower_Level1_BlueTeam.glb',function (gltf) {
@@ -310,7 +394,6 @@ function initLight() : void {
 }
 
 //Leaves
-
 function shaderLeaves(){
     const simpleNoise = `
     float N (vec2 st) { // https://thebookofshaders.com/10/
@@ -354,7 +437,6 @@ function shaderLeaves(){
 `;
     const fragmentShader = `
     varying vec2 vUv;
-    
     void main() {
         vec3 baseColor = vec3( 0.41, 1.0, 0.5 );
         float clarity = ( vUv.y * 0.875 ) + 0.125;
@@ -426,7 +508,7 @@ window.addEventListener('mousedown',(e)=>{
     if(e.button.valueOf()==0) key='left';
     if(e.button.valueOf()==1) key='middle';
     if(e.button.valueOf()==2) key='right';
-     (mouseButtonsPressed as any)[key] = true   
+    (mouseButtonsPressed as any)[key] = true   
     e.preventDefault();
 })
 window.addEventListener('mouseup',(e)=>{
@@ -434,7 +516,7 @@ window.addEventListener('mouseup',(e)=>{
     if(e.button.valueOf()==0) key='left';
     if(e.button.valueOf()==1) key='middle';
     if(e.button.valueOf()==2) key='right';
-     (mouseButtonsPressed as any)[key] = false   
+    (mouseButtonsPressed as any)[key] = false   
     e.preventDefault();
     
 })

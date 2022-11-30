@@ -39,11 +39,15 @@ export class Player extends Model{
         body: body,
         ){
         super(model,mixer,animationsMap,currentAction,body)
-
+        this.incomeDamage=0.005
+        this.lifeBar.position.y=this.model.position.y+4.3
+        this.model.add(this.lifeBar)
         this.particles=particles
     }
 
-    public update(delta:number, keysPressed:any, mouseButtonsPressed:any) : void {
+    public update(delta:number, keysPressed:any, mouseButtonsPressed:any, camera:THREE.PerspectiveCamera) : void {
+        this.lifeBar.lookAt(camera.position)
+        this.lifeAction(this.incomeDamage,'','')
         const ball = this.ball
         const model = this.model
         const lookingAt = this.lookingAt
@@ -167,7 +171,6 @@ export class Player extends Model{
             this.particles.emitters.forEach((a:any) => {
                 a.position.set(balls[i].position.x,balls[i].position.y,balls[i].position.z)
                 a.position.scale=.1
-                a.dead=false
                 if(this.play == "1H_attack") {
                     a.behaviours[1].colorA.colors = [colors.bluePFX]
                 } else if (this.play == "2H_attack") {
