@@ -30,8 +30,8 @@ let nebula     : any
 // initDragon() 
 initPlayer()
 initLight() 
-initLevel_1() 
-// initLevel_2() 
+// initLevel_1() 
+initLevel_2() 
 
 
 
@@ -47,6 +47,7 @@ function animate() : void {
     }
     const delta = clock.getDelta()
     // dragon ? dragon.update(delta, player.getModel().position,player.getModel().rotation) : null
+    if(monster)        monster.updateAnimations(delta,'idle');
     if(mushroom)        mushroom.updateAnimations(delta,'No.003');
     if(nebula)          nebula.update()       
     if(skyboxMesh)      skyboxMesh.position.copy( app.camera.position )
@@ -140,8 +141,8 @@ function initPlayer() : void {
     })
 }
 
-function initSlime(x:number,z:number):void {
-    loader.load('/models/characters/slime.glb',function (gltf) {
+function initSlime(x:number,z:number,name:string):void {
+    loader.load(name,function (gltf) {
         const model = gltf.scene
         const gltfAnimations: THREE.AnimationClip[] = gltf.animations
         const mixer = new THREE.AnimationMixer(model)
@@ -169,7 +170,172 @@ function initSlime(x:number,z:number):void {
 }
 
 function initLevel_2() : void {
-    
+       //!init enemies
+    function circleXY(r:number, theta:number) {
+        theta = (theta-90) * Math.PI/180;
+        return {x: r*Math.cos(theta),y: -r*Math.sin(theta)}
+    }
+
+    slimes = new Array(2)
+    for (let theta=0; theta<360; theta += 45) {
+        const  answer = circleXY(40, theta)
+        const x=answer.x
+        const z=answer.y
+        const ball = new THREE.Mesh(new THREE.SphereGeometry(.2), new THREE.MeshLambertMaterial({ color: 'white'}))
+        initSlime(x,z,'/models/characters/slime.glb')
+    }
+    //!SKYBOX
+    const ft = new THREE.TextureLoader().load("textures/skysnow/snowFRONT.jpg");
+    const bk = new THREE.TextureLoader().load("textures/skysnow/snowBACK.jpg");
+    const up = new THREE.TextureLoader().load("textures/skysnow/snowTOP.jpg");
+    const dn = new THREE.TextureLoader().load("textures/skysnow/snowBOTTOM.jpg");
+    const rt = new THREE.TextureLoader().load("textures/skysnow/snowRIGHT.jpg");
+    const lf = new THREE.TextureLoader().load("textures/skysnow/snowLEFT.jpg")
+
+    const skyboxGeo = new THREE.BoxGeometry(2000,2000,2000);
+    const skyboxMaterials =[
+    new THREE.MeshBasicMaterial( { map: ft, side: THREE.BackSide } ),
+    new THREE.MeshBasicMaterial( { map: bk, side: THREE.BackSide } ),
+    new THREE.MeshBasicMaterial( { map: up, side: THREE.BackSide } ),
+    new THREE.MeshBasicMaterial( { map: dn, side: THREE.BackSide } ),
+    new THREE.MeshBasicMaterial( { map: rt, side: THREE.BackSide } ),
+    new THREE.MeshBasicMaterial( { map: lf, side: THREE.BackSide } ),]
+    skyboxMesh = new THREE.Mesh( skyboxGeo, skyboxMaterials );
+    app.scene.add(skyboxMesh);
+    //!PLANE
+    const soilBaseColor = textureLoader.load("./textures/snow/snow_02_diff_4k.jpg");
+    const soilNormalMap = textureLoader.load("./textures/snow/snow_02_nor_gl_4k.jpg");
+    const soilHeightMap = textureLoader.load("./textures/snow/snow_02_disp_4k.jng");
+    const soilRoughness = textureLoader.load("./textures/snow/snow_02_rough_4k.jpg");
+    const soilAmbientOcclusion = textureLoader.load("./textures/snow/snow_02_ao_4k.jpg");
+    const geometrySoil = new THREE.PlaneGeometry(100, 50,200,200)
+    const planeSoil = new THREE.Mesh(geometrySoil, new THREE.MeshStandardMaterial({
+        map: soilBaseColor,
+        normalMap: soilNormalMap,
+        displacementMap: soilHeightMap, displacementScale: 2,
+        roughnessMap: soilRoughness, roughness: 0,
+        aoMap: soilAmbientOcclusion,
+
+        // opacity: 1,
+        // transparent:true
+    }));
+    planeSoil.rotateX(-Math.PI / 2) 
+    planeSoil.receiveShadow = true;
+    planeSoil.receiveShadow = true
+    planeSoil.position.y = -1
+    app.scene.add(planeSoil)
+    const planeShape = new CANNON.Plane()
+    const planeBody = new CANNON.Body({ mass: 0, shape: planeShape})
+    planeBody.id=5
+    planeBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2)
+    app.world.addBody(planeBody)
+    //!VILLAGE
+    //!MONSTER
+    loader.load('/models/characters/monster.glb',function (gltf) {
+        const model = gltf.scene
+        const gltfAnimations: THREE.AnimationClip[] = gltf.animations
+        const mixer = new THREE.AnimationMixer(model)
+        const animationMap: Map<string, THREE.AnimationAction> = new Map()
+        gltfAnimations.filter(a=> a.name != 'Key|Monster_Hunter_Mesh|Take 001_Monster_Hunter_Mesh').forEach((a:THREE.AnimationClip)=>{
+            animationMap.set(a.name,mixer.clipAction(a))
+        })
+        model.scale.set(.2,.2,.2)
+        model.position.set(-32,-1,2)
+        model.scale.set(2,2,2)
+        model.rotateY(.8)
+        model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
+        app.scene.add(model)
+        const body : body = {shape: new THREE.Mesh, skeleton: new THREE.Box3}
+        monster = new Model(model,mixer,animationMap,'idle',body)
+    })
+    //!umberMil
+    loader.load('/models/village/LumberMill_BlueTeam.glb',function (gltf) {
+        const model = gltf.scene
+        model.position.set(-35,5,-5)
+        model.rotateY(.5)
+        model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
+        app.scene.add(model)
+    })
+    //!HOUSE
+    loader.load('/models/village/House_Level2_BlueTeam.glb',function (gltf) {
+        const model = gltf.scene
+        model.position.set(35,5,-15)
+        model.rotateY(-2.55)
+
+        model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
+        app.scene.add(model)
+    })
+    //!HOUSE_2
+    loader.load('/models/village/House_Level2_BlueTeam.glb',function (gltf) {
+        const model = gltf.scene
+        model.position.set(37,5,13)
+        model.rotateY(-1.6)
+        model.scale.x=1.5
+        model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
+        app.scene.add(model)
+    })
+    //!GATE
+    loader.load('/models/village/Gate_Level2_BlueTeam.glb',function (gltf) {
+        const model = gltf.scene
+        model.position.set(0,6,-30)
+        model.rotateY(1.55)
+        model.scale.y=.7
+        model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
+        app.scene.add(model)
+    })
+    //!Walls
+    let wallsX:number = -25.5
+    for (let i = 0; i < 2; i++) {
+        loader.load('/models/village/Wall_Level2_BlueTeam.glb',function (gltf) {
+            let model = gltf.scene
+            model.rotateY(80)
+            model.scale.y=2
+
+            model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
+            model.position.set(wallsX,5,-30)
+            app.scene.add(model)
+            wallsX+=51.5;
+        })
+    }
+    let wallsXleft:number = -28.5
+    for (let i = 0; i < 3; i++) {
+        loader.load('/models/village/Wall_Level2_BlueTeam.glb',function (gltf) {
+            let model = gltf.scene
+            model.rotateY(0)
+            model.scale.y=2
+
+            model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
+            model.position.set(-55,5,wallsXleft)
+            app.scene.add(model)
+            wallsXleft+=15.5;
+        })
+    }
+    let wallsXright:number = -28.5
+    for (let i = 0; i < 3; i++) {
+        loader.load('/models/village/Wall_Level2_BlueTeam.glb',function (gltf) {
+            let model = gltf.scene
+            model.rotateY(0)
+            model.scale.y=.1
+            model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
+            model.position.set(55,5,wallsXright)
+            app.scene.add(model)
+            wallsXright+=15.5;
+        })
+    }
+
+    let towerX :number= -39.9
+    for (let i = 0; i < 2; i++) {
+        loader.load('/models/village/ArcherTower_Level2_BlueTeam.glb',function (gltf) {
+            let model = gltf.scene
+            // model.rotateY(80)
+            model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
+            model.position.set(towerX,8,-30)
+            model.scale.set(1.5,7,1.5)
+
+            app.scene.add(model)
+            towerX+=79.7
+        })
+    }
 }
 
 function initLevel_1() : void {
@@ -184,7 +350,7 @@ function initLevel_1() : void {
         const x=answer.x
         const z=answer.y
         const ball = new THREE.Mesh(new THREE.SphereGeometry(.2), new THREE.MeshLambertMaterial({ color: 'white'}))
-        initSlime(x,z)
+        initSlime(x,z,'/models/characters/greenSlime.glb')
     }
     //!SKYBOX
     const ft = new THREE.TextureLoader().load("textures/skybox/bluecloud_ft.jpg");
@@ -265,15 +431,6 @@ function initLevel_1() : void {
         app.scene.add(model)
         const body : body = {shape: new THREE.Mesh, skeleton: new THREE.Box3}
         mushroom = new Model(model,mixer,animationMap,'idle',body)
-    })
-    //!BLACKSMITH
-    loader.load('/models/village/Blacksmith_BlueTeam.glb',function (gltf) {
-        const model = gltf.scene
-        model.position.set(-35,5,-5)
-        model.rotateY(1.55)
-
-        model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
-        app.scene.add(model)
     })
     //!BLACKSMITH
     loader.load('/models/village/Blacksmith_BlueTeam.glb',function (gltf) {
@@ -451,31 +608,6 @@ function shaderLeaves(){
     side: THREE.DoubleSide
     });
 }
-
-
-// function initDragon() : void {
-//     loader.load('/models/bigboie.glb',function (gltf) {
-//         const model = gltf.scene
-//         const gltfAnimations: THREE.AnimationClip[] = gltf.animations
-//         const mixer = new THREE.AnimationMixer(model)
-//         const animationMap: Map<string, THREE.AnimationAction> = new Map()
-//         gltfAnimations.forEach((a:THREE.AnimationClip)=>{
-//             animationMap.set(a.name,mixer.clipAction(a))
-//         })
-//         const shape =  new CANNON.Cylinder(1, 1, .5, 12)
-//         const body = new CANNON.Body({ mass: 1, shape: shape})
-//         model.name = 'DragonPatron'
-//         model.position.y= -10
-//         model.rotateY(1)
-//         model.scale.set(4,4,4)
-//         model.traverse((object: any)=>{if(object.isMesh) object.castShadow = true})
-//         app.scene.add(model)
-//         dragon = new DragonPatron(model,mixer,animationMap,'Flying',body)
-//        // dragon.matrix = gltf.scene.matrix;
-//         }
-//     )
-// }
-
 
 // Resize handler
 function onWindowResize() : void {
